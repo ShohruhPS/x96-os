@@ -1,0 +1,11 @@
+#!/bin/sh
+# X96 OS: route sound to HDMI on Amlogic GX boxes (mainline driver starts with HDMI audio muted/unrouted).
+# Best effort: only touches controls that exist.
+command -v amixer >/dev/null 2>&1 || exit 0
+for card in 0 1; do
+  ctl=$(amixer -c "$card" scontrols 2>/dev/null) || continue
+  echo "$ctl" | grep -q "AIU HDMI CTRL SRC" && amixer -c "$card" -q sset 'AIU HDMI CTRL SRC' 'I2S' 2>/dev/null
+  echo "$ctl" | grep -q "AIU SPDIF SRC SEL" && amixer -c "$card" -q sset 'AIU SPDIF SRC SEL' 'SPDIF' 2>/dev/null
+  echo "$ctl" | grep -q "'ACODEC'" && amixer -c "$card" -q sset 'ACODEC' 85% unmute 2>/dev/null
+done
+exit 0

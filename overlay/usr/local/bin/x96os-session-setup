@@ -1,0 +1,34 @@
+#!/bin/sh
+# X96 OS: runs at every desktop login (fast, does real work only once per user).
+/usr/local/bin/x96os-display-setup
+
+STATE="$HOME/.config/x96os"
+mkdir -p "$STATE"
+
+# First login: put the X96 OS wallpaper on every connected monitor/workspace.
+if [ ! -f "$STATE/wallpaper-done" ]; then
+  WP=/usr/share/backgrounds/x96os/x96os-dusk.jpg
+  sleep 3   # let xfdesktop create its monitor entries
+  for mon in $(xrandr --listactivemonitors 2>/dev/null | awk 'NR>1{print $4}') 0; do
+    case "$mon" in 0) m=monitor0 ;; *) m="monitor$mon" ;; esac
+    for ws in 0 1 2 3; do
+      base="/backdrop/screen0/$m/workspace$ws"
+      xfconf-query -c xfce4-desktop -p "$base/last-image" -n -t string -s "$WP" 2>/dev/null
+      xfconf-query -c xfce4-desktop -p "$base/image-style" -n -t int -s 5 2>/dev/null
+    done
+  done
+  for prop in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E '/last-image$'); do
+    xfconf-query -c xfce4-desktop -p "$prop" -s "$WP" 2>/dev/null
+  done
+  xfdesktop --reload >/dev/null 2>&1 &
+  xdg-user-dirs-update >/dev/null 2>&1
+  touch "$STATE/wallpaper-done"
+fi
+
+# Welcome note, shown once.
+if [ ! -f "$STATE/welcome-done" ]; then
+  touch "$STATE/welcome-done"
+  ( sleep 6; notify-send -i x96os "Welcome to X96 OS" \
+      "Super key: apps menu · Super+Space: search · Celluloid plays YouTube links with hardware decoding." ) >/dev/null 2>&1 &
+fi
+exit 0

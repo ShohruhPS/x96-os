@@ -1,0 +1,29 @@
+#!/bin/sh
+# X96 OS performance tuning for the Amlogic S905W (4x Cortex-A53, 2 GB RAM, slow eMMC/SD).
+# Runs at every boot.
+
+# CPU: schedutil ramps up instantly when you click something and drops back when idle.
+for p in /sys/devices/system/cpu/cpufreq/policy*; do
+  [ -d "$p" ] || continue
+  if grep -qw schedutil "$p/scaling_available_governors" 2>/dev/null; then
+    echo schedutil > "$p/scaling_governor"
+  elif grep -qw ondemand "$p/scaling_available_governors" 2>/dev/null; then
+    echo ondemand > "$p/scaling_governor"
+  fi
+  # never park the CPU below 500 MHz: the desktop feels laggy waking from the lowest step
+  min=$(cat "$p/cpuinfo_min_freq" 2>/dev/null)
+  if [ -n "$min" ] && [ "$min" -lt 500000 ] && grep -qw 500000 "$p/scaling_available_frequencies" 2>/dev/null; then
+    echo 500000 > "$p/scaling_min_freq"
+  fi
+done
+
+# Storage: BFQ keeps the desktop responsive while something reads/writes in the background.
+for q in /sys/block/mmcblk*/queue/scheduler /sys/block/sd*/queue/scheduler; do
+  [ -f "$q" ] || continue
+  if grep -qw bfq "$q"; then echo bfq > "$q"; elif grep -qw mq-deadline "$q"; then echo mq-deadline > "$q"; fi
+done
+for r in /sys/block/mmcblk*/queue/read_ahead_kb; do [ -f "$r" ] && echo 512 > "$r"; done
+
+# Memory: no transparent huge pages compaction stalls on a 2 GB box.
+[ -f /sys/kernel/mm/transparent_hugepage/enabled ] && echo madvise > /sys/kernel/mm/transparent_hugepage/enabled
+exit 0

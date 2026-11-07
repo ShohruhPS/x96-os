@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Dock
+Comment=X96 OS dock (Plank)
+Exec=sh -c "sleep 2; exec plank"
+Icon=plank
+OnlyShowIn=XFCE;
+X-XFCE-Autostart-Override=true

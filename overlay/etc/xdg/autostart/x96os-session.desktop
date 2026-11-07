@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=X96 OS session setup
+Exec=/usr/local/bin/x96os-session-setup
+OnlyShowIn=XFCE;
+NoDisplay=true
+X-XFCE-Autostart-Override=true

@@ -1,0 +1,2 @@
+# X96 OS: if RAM runs out, close the biggest browser tab/office doc instead of freezing the box.
+EARLYOOM_ARGS="-m 5 -s 15 -r 0 --avoid '(^|/)(Xorg|lightdm|xfwm4|xfce4-panel|xfce4-session|plank|pipewire|wireplumber|systemd)$' --prefer '(^|/)(firefox-esr|Isolated Web Co|Web Content|soffice.bin)$'"

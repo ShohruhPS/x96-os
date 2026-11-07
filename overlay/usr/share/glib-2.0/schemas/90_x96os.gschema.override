@@ -1,0 +1,12 @@
+[io.github.celluloid-player.Celluloid]
+dark-theme-enable=true
+csd-enable=true
+mpv-config-enable=true
+mpv-config-file='/etc/mpv/mpv.conf'
+
+[org.gnome.desktop.interface]
+gtk-theme='WhiteSur-Dark-solid'
+icon-theme='WhiteSur-dark'
+cursor-theme='WhiteSur-cursors'
+font-name='Inter 10'
+color-scheme='prefer-dark'

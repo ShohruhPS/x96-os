@@ -1,0 +1,4 @@
+#!/bin/sh
+. /etc/x96os-release 2>/dev/null
+printf '\n  \033[1;35mX96 OS\033[0m %s  ·  %s  ·  kernel %s\n' "${X96OS_VERSION:-}" "${X96OS_DEVICE:-X96 Mini}" "$(uname -r)"
+printf '  Install to internal storage: sudo armbian-install (choose 113 X96-Mini)\n\n'

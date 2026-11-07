@@ -1,0 +1,13 @@
+[Unit]
+Description=X96 OS HDMI audio routing
+After=sound.target alsa-restore.service
+Wants=sound.target
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 2
+ExecStart=/usr/local/sbin/x96os-audio
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

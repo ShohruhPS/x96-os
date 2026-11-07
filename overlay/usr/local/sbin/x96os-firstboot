@@ -1,0 +1,35 @@
+#!/bin/bash
+# X96 OS first boot: grow the root filesystem to fill the SD card / USB stick,
+# make sure SSH host keys exist. Runs once.
+set -u
+MARK=/var/lib/x96os/firstboot-done
+[ -f "$MARK" ] && exit 0
+mkdir -p /var/lib/x96os
+exec >>/var/log/x96os-firstboot.log 2>&1
+echo "== $(date) first boot"
+
+# SSH host keys were removed from the image so every box gets its own.
+if command -v ssh-keygen >/dev/null 2>&1; then
+  ls /etc/ssh/ssh_host_*_key >/dev/null 2>&1 || ssh-keygen -A
+fi
+
+# Grow rootfs (only when it is the last partition of the disk, e.g. SD card / USB).
+ROOTDEV=$(findmnt -n -o SOURCE /)
+case "$ROOTDEV" in
+  /dev/mmcblk*p[0-9]*|/dev/nvme*p[0-9]*) DISK=${ROOTDEV%p[0-9]*}; PART=${ROOTDEV##*p} ;;
+  /dev/sd[a-z][0-9]*)                   DISK=${ROOTDEV%%[0-9]*};  PART=${ROOTDEV##*[a-z]} ;;
+  *) DISK=""; PART="" ;;
+esac
+if [ -n "$DISK" ] && [ -b "$DISK" ]; then
+  LAST=$(lsblk -nro NAME,TYPE "$DISK" | awk '$2=="part"{n=$1} END{print n}')
+  if [ "/dev/$LAST" = "$ROOTDEV" ]; then
+    echo "growing $ROOTDEV (disk $DISK partition $PART)"
+    growpart "$DISK" "$PART" && partprobe "$DISK" 2>/dev/null
+    resize2fs "$ROOTDEV" || true
+  else
+    echo "rootfs $ROOTDEV is not the last partition, not growing"
+  fi
+fi
+df -h /
+touch "$MARK"
+exit 0

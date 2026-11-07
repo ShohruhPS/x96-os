@@ -1,0 +1,31 @@
+# X96 OS defaults for GTK3/GTK4 apps (users can override)
+[org/gnome/desktop/interface]
+gtk-theme='WhiteSur-Dark-solid'
+icon-theme='WhiteSur-dark'
+cursor-theme='WhiteSur-cursors'
+cursor-size=24
+font-name='Inter 10'
+monospace-font-name='DejaVu Sans Mono 10'
+color-scheme='prefer-dark'
+enable-animations=true
+
+[org/gnome/desktop/wm/preferences]
+button-layout='close,minimize,maximize:'
+
+[io/github/celluloid-player/celluloid]
+dark-theme-enable=true
+csd-enable=true
+mpv-config-enable=true
+mpv-config-file='/etc/mpv/mpv.conf'
+
+[net/launchpad/plank/docks/dock1]
+theme='WhiteSur-Dark'
+position='bottom'
+alignment='center'
+icon-size=48
+zoom-enabled=true
+zoom-percent=140
+hide-mode='window-dodge'
+show-dock-item=false
+lock-items=false
+dock-items=@as []

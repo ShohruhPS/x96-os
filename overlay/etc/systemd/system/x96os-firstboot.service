@@ -1,0 +1,15 @@
+[Unit]
+Description=X96 OS first boot setup (grow filesystem, SSH keys)
+DefaultDependencies=no
+After=local-fs.target
+Before=ssh.service sshd.service lightdm.service display-manager.service
+ConditionPathExists=!/var/lib/x96os/firstboot-done
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/x96os-firstboot
+RemainAfterExit=yes
+TimeoutSec=300
+
+[Install]
+WantedBy=multi-user.target

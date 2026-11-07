@@ -1,0 +1,11 @@
+[Unit]
+Description=X96 OS performance tuning (CPU governor, I/O scheduler)
+After=sysinit.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/x96os-tune
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
