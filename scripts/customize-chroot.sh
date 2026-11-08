@@ -5,10 +5,14 @@ trap 'echo "::error::customize-chroot.sh failed at line $LINENO: $BASH_COMMAND"'
 
 export DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
 VERSION="${X96OS_VERSION:-1.0}"
+EDITION="${X96OS_EDITION:-desktop}"        # desktop | cli
+case "$EDITION" in desktop|cli) ;; *) echo "::error::unknown edition $EDITION"; exit 1 ;; esac
 USERNAME="x96"
 PASSWORD="x96os"
 TZ_NAME="Asia/Tashkent"
 OVERLAY=/tmp/x96os/overlay
+OVERLAY_COMMON=/tmp/x96os/overlay-common
+OVERLAY_CLI=/tmp/x96os/overlay-cli
 KVER="$(ls -1 /lib/modules | sort -V | tail -n1)"
 APT=(apt-get -y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
 
@@ -17,7 +21,7 @@ step() { echo; echo "---------- $* ----------"; }
 want() { local p; for p in "$@"; do if apt-cache show "$p" >/dev/null 2>&1; then echo "$p"; else echo "  (not available, skipped: $p)" >&2; fi; done; }
 have() { apt-cache show "$1" >/dev/null 2>&1; }
 
-step "Base system"
+step "Base system ($EDITION edition)"
 cat /etc/os-release
 echo "kernel: $KVER"
 cat /etc/ophub-release 2>/dev/null || true
@@ -49,6 +53,8 @@ for p in $(dpkg-query -W -f='${Package}\n' 2>/dev/null | grep -E '^(linux-(image
 done
 
 "${APT[@]}" update
+
+if [ "$EDITION" = desktop ]; then
 
 step "Install desktop, apps and tools"
 CORE=(
@@ -103,6 +109,29 @@ for agent in xfce-polkit lxpolkit mate-polkit; do
   if have "$agent"; then "${APT[@]}" install --no-install-recommends "$agent"; break; fi
 done
 
+else
+
+step "Install command-line system"
+CLI_CORE=(
+  # network: Ethernet + Wi-Fi via NetworkManager (nmtui), Bluetooth via bluetoothctl
+  network-manager wpasupplicant iw wireless-regdb bluez
+  # everyday tools
+  htop tmux nano less curl wget git rsync ncdu unzip zip bash-completion man-db
+  file lsof psmisc procps iproute2 iputils-ping dnsutils ethtool usbutils pciutils
+  # console + system
+  console-setup kbd alsa-utils earlyoom cloud-guest-utils locales tzdata sudo ca-certificates
+  openssh-server make bc python3
+)
+mapfile -t CORE_OK < <(want "${CLI_CORE[@]}")
+"${APT[@]}" install --no-install-recommends "${CORE_OK[@]}"
+for b in /usr/bin/nmcli /usr/bin/nmtui /usr/bin/htop /usr/bin/tmux /usr/sbin/sshd; do
+  [ -x "$b" ] || { echo "::error::required program missing after install: $b"; exit 1; }
+done
+mapfile -t OPT < <(want btop fastfetch iperf3 lm-sensors)
+[ "${#OPT[@]}" -gt 0 ] && "${APT[@]}" install --no-install-recommends "${OPT[@]}"
+
+fi
+
 step "Firmware for Wi-Fi / Bluetooth"
 # Armbian's firmware package carries the board firmware (Broadcom/AP6xxx Wi-Fi, Amlogic video
 # decoder) plus the common USB dongles (Realtek, MediaTek, Ralink, Atheros). Keep it untouched:
@@ -133,6 +162,7 @@ else
   echo "using zram-tools"
 fi
 
+if [ "$EDITION" = desktop ]; then
 step "yt-dlp (lets the media player stream YouTube with hardware decoding)"
 if curl -fsSL --retry 3 -o /usr/local/bin/yt-dlp https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux_aarch64; then
   chmod 755 /usr/local/bin/yt-dlp
@@ -140,6 +170,7 @@ if curl -fsSL --retry 3 -o /usr/local/bin/yt-dlp https://github.com/yt-dlp/yt-dl
 else
   echo "yt-dlp download failed, trying the Debian package"
   have yt-dlp && "${APT[@]}" install --no-install-recommends yt-dlp || true
+fi
 fi
 
 step "Built-in Wi-Fi drivers for X96 Mini variants (RTL8189ES / RTL8189FTV)"
@@ -171,9 +202,26 @@ build_wifi_drivers() {
 build_wifi_drivers || echo "WARNING: Wi-Fi driver build skipped"
 
 step "Apply X96 OS configuration overlay"
-cp -a "$OVERLAY"/. /
-chmod 755 /usr/local/bin/x96os-* /usr/local/sbin/x96os-* 2>/dev/null || true
-chmod 755 /etc/update-motd.d/05-x96os 2>/dev/null || true
+if [ "$EDITION" = desktop ]; then
+  cp -a "$OVERLAY"/. /
+else
+  # only the system-level parts of the desktop overlay, then the CLI overlay
+  for f in etc/sysctl.d/90-x96os.conf etc/systemd/journald.conf.d/90-x96os.conf etc/default/earlyoom \
+           etc/systemd/system/x96os-firstboot.service etc/systemd/system/x96os-tune.service \
+           etc/systemd/system/x96os-audio.service usr/local/sbin/x96os-firstboot usr/local/sbin/x96os-tune \
+           usr/local/sbin/x96os-audio; do
+    install -D -m "$( [ -x "$OVERLAY/$f" ] && echo 755 || echo 644 )" "$OVERLAY/$f" "/$f"
+  done
+  cp -a "$OVERLAY_CLI"/. /
+  sed -i "s|^EARLYOOM_ARGS=.*|EARLYOOM_ARGS=\"-m 4 -s 10 -r 0 --avoid '(^\|/)(sshd\|systemd\|NetworkManager)\$'\"|" /etc/default/earlyoom
+fi
+cp -a "$OVERLAY_COMMON"/. /
+# ~/.bashrc sets its own prompt after /etc/profile.d, so load the X96 OS shell settings last
+for f in /etc/skel/.bashrc /root/.bashrc; do
+  [ -f "$f" ] && ! grep -q x96os.sh "$f" && echo '[ -f /etc/profile.d/x96os.sh ] && . /etc/profile.d/x96os.sh' >> "$f"
+done
+mkdir -p /etc/x96os && echo "$EDITION" > /etc/x96os/edition
+chmod 755 /usr/local/bin/x96os* /usr/local/sbin/x96os-* /etc/update-motd.d/*x96os* 2>/dev/null || true
 
 step "Branding"
 echo "x96os" > /etc/hostname
@@ -187,11 +235,26 @@ X96OS_BUILD_DATE=$(date -u +%Y-%m-%d)
 X96OS_DEVICE="X96 Mini (Amlogic S905W)"
 X96OS_KERNEL=${KVER}
 EOF
-echo "X96 OS ${VERSION} \\n \\l" > /etc/issue
+sed -i "s|^X96OS_DEVICE=.*|&\nX96OS_EDITION=${EDITION}|" /etc/x96os-release
+if [ "$EDITION" = cli ]; then
+  # console login banner: logo, version and the box's IP address (\4 is filled in by agetty)
+  {
+    printf '\n\033[38;5;171m  X96 OS %s\033[0m  \033[2mcommand-line edition\033[0m\n' "$VERSION"
+    printf '  \033[2mhost\033[0m \\n   \033[2mIP\033[0m \\4   \033[2mconsole\033[0m \\l\n'
+    printf '  \033[2mlog in as\033[0m x96 \033[2m/ password\033[0m x96os\n\n'
+  } > /etc/issue
+  # Armbian's own login messages are replaced by the X96 OS greeting
+  for f in /etc/update-motd.d/*; do
+    case "$f" in *x96os*) ;; *) chmod -x "$f" ;; esac
+  done
+  : > /etc/motd
+else
+  echo "X96 OS ${VERSION} \\n \\l" > /etc/issue
+  for f in /etc/update-motd.d/10-armbian-header /etc/update-motd.d/35-armbian-tips /etc/update-motd.d/41-armbian-config; do
+    [ -f "$f" ] && chmod -x "$f"
+  done
+fi
 echo "X96 OS ${VERSION}" > /etc/issue.net
-for f in /etc/update-motd.d/10-armbian-header /etc/update-motd.d/35-armbian-tips /etc/update-motd.d/41-armbian-config; do
-  [ -f "$f" ] && chmod -x "$f"
-done
 
 step "Locale and time zone"
 sed -i 's/^# *en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
@@ -211,7 +274,11 @@ done
 echo "$USERNAME:$PASSWORD" | chpasswd
 echo "root:$PASSWORD" | chpasswd
 rm -f /root/.not_logged_in_yet          # skip Armbian's console first-login wizard
-for d in Desktop Documents Downloads Music Pictures Videos; do install -d -o "$USERNAME" -g "$USERNAME" "/home/$USERNAME/$d"; done
+if [ "$EDITION" = desktop ]; then
+  for d in Desktop Documents Downloads Music Pictures Videos; do install -d -o "$USERNAME" -g "$USERNAME" "/home/$USERNAME/$d"; done
+fi
+
+if [ "$EDITION" = desktop ]; then
 
 step "Desktop defaults"
 # dock / panel layout depends on what the archive had
@@ -353,9 +420,6 @@ if os.path.exists(p):
     t.write(p, encoding="UTF-8", xml_declaration=True)
     print("shortcuts updated")
 PY
-# whole home of the existing user gets the skel defaults too
-cp -a /etc/skel/. "/home/$USERNAME/"
-chown -R "$USERNAME:$USERNAME" "/home/$USERNAME"
 
 step "Firefox tuning"
 FFJS=/etc/firefox-esr/firefox-esr.js
@@ -373,13 +437,28 @@ done
 update-desktop-database -q /usr/share/applications || true
 fc-cache -f >/dev/null 2>&1 || true
 
+fi
+
+# whole home of the existing user gets the skel defaults too
+cp -a /etc/skel/. "/home/$USERNAME/"
+chown -R "$USERNAME:$USERNAME" "/home/$USERNAME"
+
 step "Services"
-systemctl set-default graphical.target
-systemctl enable lightdm.service || true
+if [ "$EDITION" = desktop ]; then
+  systemctl set-default graphical.target
+  systemctl enable lightdm.service || true
+  systemctl --global enable pipewire.socket pipewire-pulse.socket wireplumber.service 2>/dev/null || true
+else
+  systemctl set-default multi-user.target
+  systemctl enable ssh.service 2>/dev/null || true
+  systemctl enable console-setup.service 2>/dev/null || true
+  # Bluetooth is off by default on the headless edition (saves RAM): x96os users can
+  # turn it on with: sudo systemctl enable --now bluetooth
+  systemctl disable bluetooth.service 2>/dev/null || true
+fi
 systemctl enable NetworkManager.service || true
 systemctl enable x96os-firstboot.service x96os-tune.service x96os-audio.service
 systemctl enable earlyoom.service || true
-systemctl --global enable pipewire.socket pipewire-pulse.socket wireplumber.service 2>/dev/null || true
 # Ethernet and Wi-Fi are handed to NetworkManager (nm-applet in the top bar)
 if [ -d /etc/netplan ]; then
   mkdir -p /etc/netplan/backup
@@ -417,7 +496,8 @@ step "Build info"
 {
   echo "X96 OS ${VERSION} built $(date -u '+%Y-%m-%d %H:%M UTC')"
   echo "Base: $BASE_PRETTY ($CODENAME), kernel $KVER"
-  echo "Dock: $DOCK"
+  echo "Edition: $EDITION"
+  [ "$EDITION" = desktop ] && echo "Dock: $DOCK"
   echo "Wi-Fi modules added: $(ls /lib/modules/$KVER/kernel/drivers/net/wireless/x96os 2>/dev/null | xargs || echo none)"
   echo "Themes: $(tr '\n' ' ' < /tmp/x96os/themes.txt)"
   echo "Packages installed: $(dpkg-query -W | wc -l)"

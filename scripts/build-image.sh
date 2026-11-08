@@ -11,6 +11,7 @@ REPO="$(cd "$(dirname "$0")/.." && pwd)"
 IN="$(readlink -f "$1")"
 OUTDIR="$2"
 VERSION="${X96OS_VERSION:-1.0}"
+EDITION="${X96OS_EDITION:-desktop}"     # desktop | cli
 WORK="${WORK:-/tmp/x96os-work}"
 MNT="$WORK/rootfs"
 IMG="$WORK/x96os.img"
@@ -42,6 +43,8 @@ if [[ "$(basename "$IN")" != *"_${BOARD_ID}_"* ]]; then
   IN="$(readlink -f "$ALT")"
 fi
 [ "$(uname -m)" = aarch64 ] || fail "needs an arm64 host (got $(uname -m))"
+case "$EDITION" in desktop|cli) ;; *) fail "X96OS_EDITION must be desktop or cli (got $EDITION)" ;; esac
+echo "Building X96 OS ${VERSION} (${EDITION} edition)"
 rm -rf "$WORK"; mkdir -p "$WORK" "$MNT" "$OUTDIR"
 
 # ------------------------------------------------------------------ 1. unpack
@@ -78,6 +81,8 @@ grep -q 'meson-gxl-s905w-x96-mini.dtb' "$MNT/boot/uEnv.txt" || fail "uEnv.txt do
 cat "$MNT/etc/ophub-release" 2>/dev/null || true
 
 # ------------------------------------------------------------------ 2. artwork + themes (host side, arch independent)
+: > "$WORK/themes.txt"
+if [ "$EDITION" = desktop ]; then
 log "Generating X96 OS artwork"
 ART="$WORK/art"
 python3 "$REPO/assets/make-wallpapers.py" "$ART"
@@ -110,6 +115,7 @@ done
 ( cd "$TH/WhiteSur-icon-theme" && bash ./install.sh -d "$MNT/usr/share/icons" )
 cp -r "$TH/WhiteSur-cursors/dist" "$MNT/usr/share/icons/WhiteSur-cursors"
 ls "$MNT/usr/share/icons"
+fi
 
 # ------------------------------------------------------------------ 3. chroot customisation
 log "Preparing chroot"
@@ -123,16 +129,16 @@ fi
 printf '#!/bin/sh\nexit 101\n' > "$MNT/usr/sbin/policy-rc.d"; chmod +x "$MNT/usr/sbin/policy-rc.d"
 
 rm -rf "$MNT/tmp/x96os"; mkdir -p "$MNT/tmp/x96os"
-cp -a "$REPO/overlay" "$MNT/tmp/x96os/overlay"
+cp -a "$REPO/overlay" "$REPO/overlay-common" "$REPO/overlay-cli" "$MNT/tmp/x96os/"
 cp "$REPO/scripts/customize-chroot.sh" "$MNT/tmp/x96os/"
 cp "$WORK/themes.txt" "$MNT/tmp/x96os/"
 
 log "Running customize-chroot.sh"
 chroot "$MNT" /usr/bin/env -i HOME=/root TERM=xterm PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-  X96OS_VERSION="$VERSION" /bin/bash /tmp/x96os/customize-chroot.sh
+  X96OS_VERSION="$VERSION" X96OS_EDITION="$EDITION" /bin/bash /tmp/x96os/customize-chroot.sh
 
 log "Leaving chroot"
-cp "$MNT/etc/x96os-build-info.txt" "$OUTDIR/x96os-build-info.txt" 2>/dev/null || true
+cp "$MNT/etc/x96os-build-info.txt" "$OUTDIR/x96os-build-info-${EDITION}.txt" 2>/dev/null || true
 rm -f "$MNT/usr/sbin/policy-rc.d"
 rm -f "$MNT/etc/resolv.conf"
 if [ -n "$RESOLV_BAK" ]; then cp -a "$RESOLV_BAK" "$MNT/etc/resolv.conf"; else ln -s /run/NetworkManager/resolv.conf "$MNT/etc/resolv.conf"; fi
@@ -172,7 +178,7 @@ losetup -d "$LOOP"; LOOP=""
 
 # ------------------------------------------------------------------ 5. compress
 log "Compressing"
-NAME="X96OS-${VERSION}-x96mini-s905w-$(date -u +%Y%m%d).img"
+NAME="X96OS-${VERSION}-${EDITION}-x96mini-s905w-$(date -u +%Y%m%d).img"
 mv "$IMG" "$OUTDIR/$NAME"
 xz -T0 -6 -v "$OUTDIR/$NAME"
 ( cd "$OUTDIR" && sha256sum "$NAME.xz" > "$NAME.xz.sha256" )

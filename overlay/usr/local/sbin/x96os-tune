@@ -1,28 +1,59 @@
 #!/bin/sh
 # X96 OS performance tuning for the Amlogic S905W (4x Cortex-A53, 2 GB RAM, slow eMMC/SD).
-# Runs at every boot.
+# Runs at every boot. Edition (desktop / cli) is in /etc/x96os/edition.
+EDITION=$(cat /etc/x96os/edition 2>/dev/null || echo desktop)
+NCPU=$(grep -c ^processor /proc/cpuinfo)
 
-# CPU: schedutil ramps up instantly when you click something and drops back when idle.
+# CPU: schedutil ramps up instantly when there is work and drops back when idle.
 for p in /sys/devices/system/cpu/cpufreq/policy*; do
   [ -d "$p" ] || continue
   if grep -qw schedutil "$p/scaling_available_governors" 2>/dev/null; then
     echo schedutil > "$p/scaling_governor"
+    # react to load quickly (default rate limit is tuned for phones)
+    [ -f "$p/schedutil/rate_limit_us" ] && echo 2000 > "$p/schedutil/rate_limit_us"
   elif grep -qw ondemand "$p/scaling_available_governors" 2>/dev/null; then
     echo ondemand > "$p/scaling_governor"
   fi
-  # never park the CPU below 500 MHz: the desktop feels laggy waking from the lowest step
-  min=$(cat "$p/cpuinfo_min_freq" 2>/dev/null)
-  if [ -n "$min" ] && [ "$min" -lt 500000 ] && grep -qw 500000 "$p/scaling_available_frequencies" 2>/dev/null; then
-    echo 500000 > "$p/scaling_min_freq"
+  # Desktop: never park below 500 MHz, waking from the lowest step makes the UI feel laggy.
+  # CLI: allow the lowest step, a headless box spends most of its time idle.
+  if [ "$EDITION" = desktop ]; then
+    min=$(cat "$p/cpuinfo_min_freq" 2>/dev/null)
+    if [ -n "$min" ] && [ "$min" -lt 500000 ] && grep -qw 500000 "$p/scaling_available_frequencies" 2>/dev/null; then
+      echo 500000 > "$p/scaling_min_freq"
+    fi
   fi
 done
 
-# Storage: BFQ keeps the desktop responsive while something reads/writes in the background.
+# Storage: BFQ keeps things responsive while something reads/writes in the background.
 for q in /sys/block/mmcblk*/queue/scheduler /sys/block/sd*/queue/scheduler; do
   [ -f "$q" ] || continue
   if grep -qw bfq "$q"; then echo bfq > "$q"; elif grep -qw mq-deadline "$q"; then echo mq-deadline > "$q"; fi
 done
 for r in /sys/block/mmcblk*/queue/read_ahead_kb; do [ -f "$r" ] && echo 512 > "$r"; done
+
+# Network: the S905W NIC and Wi-Fi have a single receive queue, so by default one core does all
+# the packet work. Spread it over every core (RPS/RFS).
+MASK=$(printf '%x' $(( (1 << NCPU) - 1 )))
+for q in /sys/class/net/*/queues/rx-*/rps_cpus; do
+  case "$q" in */lo/*) continue ;; esac
+  echo "$MASK" > "$q" 2>/dev/null
+done
+echo 4096 > /proc/sys/net/core/rps_sock_flow_entries 2>/dev/null
+for f in /sys/class/net/*/queues/rx-*/rps_flow_cnt; do
+  case "$f" in */lo/*) continue ;; esac
+  echo 2048 > "$f" 2>/dev/null
+done
+
+# Interrupts: CPU0 already handles the timer and most other IRQs; move storage, Ethernet and USB
+# interrupts to the other cores, round-robin.
+if [ "$NCPU" -gt 1 ]; then
+  n=0
+  for irq in $(awk -F: '/mmc|eth|dwmac|xhci|dwc|usb|ehci|ohci/ {gsub(/ /, "", $1); print $1}' /proc/interrupts); do
+    cpu=$(( 1 + n % (NCPU - 1) ))
+    printf '%x' $(( 1 << cpu )) > "/proc/irq/$irq/smp_affinity" 2>/dev/null
+    n=$((n + 1))
+  done
+fi
 
 # Memory: no transparent huge pages compaction stalls on a 2 GB box.
 [ -f /sys/kernel/mm/transparent_hugepage/enabled ] && echo madvise > /sys/kernel/mm/transparent_hugepage/enabled

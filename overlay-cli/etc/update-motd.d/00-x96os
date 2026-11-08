@@ -1,0 +1,3 @@
+#!/bin/sh
+# X96 OS login greeting (pam_motd runs this without a terminal, so force colour + UTF-8)
+X96OS_COLOR=1 LANG=C.UTF-8 exec /usr/local/bin/x96os-info

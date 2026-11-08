@@ -1,0 +1,49 @@
+#!/bin/bash
+# x96os: small helper for everyday X96 OS tasks.
+set -u
+cmd="${1:-info}"; shift || true
+
+need_root() { [ "$(id -u)" = 0 ] || exec sudo "$0" "$cmd" "$@"; }
+
+case "$cmd" in
+  info|"")   exec /usr/local/bin/x96os-info ;;
+  wifi)      exec nmtui-connect "$@" ;;
+  net)       exec nmtui ;;
+  install)   need_root "$@"; echo "Installs X96 OS to the internal eMMC. THIS ERASES ANDROID."
+             echo "When asked for the box, choose: 113  X96-Mini"; echo
+             exec armbian-install "$@" ;;
+  backup)    need_root "$@"; exec armbian-ddbr "$@" ;;
+  update)    need_root "$@"; apt-get update && apt-get -y full-upgrade && apt-get -y autoremove ;;
+  kernel)    need_root "$@"; exec armbian-update "$@" ;;
+  temp)      exec watch -n1 -t 'printf "CPU %s°C   " $(( $(cat /sys/class/thermal/thermal_zone0/temp)/1000 ));
+                for c in /sys/devices/system/cpu/cpu[0-9]*; do printf "%s: %s MHz  " "${c##*/}" $(( $(cat $c/cpufreq/scaling_cur_freq 2>/dev/null || echo 0)/1000 )); done; echo' ;;
+  tune)      echo "CPU governor : $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo n/a)"
+             f=/sys/devices/system/cpu/cpu0/cpufreq
+             if [ -r "$f/scaling_min_freq" ]; then
+               echo "CPU range    : $(( $(cat $f/scaling_min_freq)/1000 ))-$(( $(cat $f/scaling_max_freq)/1000 )) MHz"
+             fi
+             for q in /sys/block/mmcblk*/queue/scheduler /sys/block/sd*/queue/scheduler; do
+               [ -f "$q" ] && echo "I/O ${q#/sys/block/}: $(cat "$q")" | sed 's|/queue/scheduler||'
+             done
+             echo "Swap (zram)  : $(swapon --show=NAME,SIZE,USED --noheadings 2>/dev/null | xargs)"
+             echo "TCP          : $(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null) / $(sysctl -n net.core.default_qdisc 2>/dev/null)"
+             echo "swappiness   : $(sysctl -n vm.swappiness)" ;;
+  passwd)    passwd ;;
+  version)   cat /etc/x96os-release ;;
+  help|-h|--help)
+    cat <<'EOF'
+x96os            system overview
+x96os wifi       connect to a Wi-Fi network
+x96os net        all network settings (Wi-Fi, Ethernet, hostname)
+x96os install    install X96 OS to the internal storage (erases Android)
+x96os backup     back up / restore the internal storage (armbian-ddbr)
+x96os update     update all software
+x96os kernel     update the kernel (ophub armbian-update)
+x96os temp       live CPU temperature and clock speeds
+x96os tune       show the performance settings in use
+x96os passwd     change your password
+x96os version    X96 OS version info
+EOF
+    ;;
+  *) echo "unknown command: $cmd (try: x96os help)" >&2; exit 1 ;;
+esac

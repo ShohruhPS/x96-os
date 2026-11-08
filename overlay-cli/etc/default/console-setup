@@ -1,0 +1,7 @@
+# X96 OS: large, sharp console font so text is readable on a TV from the sofa.
+ACTIVE_CONSOLES="/dev/tty[1-6]"
+CHARMAP="UTF-8"
+CODESET="guess"
+FONTFACE="TerminusBold"
+FONTSIZE="16x32"
+VIDEOMODE=
