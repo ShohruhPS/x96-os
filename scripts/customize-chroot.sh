@@ -20,6 +20,8 @@ step() { echo; echo "---------- $* ----------"; }
 # print only the packages from the arguments that exist in the archive
 want() { local p; for p in "$@"; do if apt-cache show "$p" >/dev/null 2>&1; then echo "$p"; else echo "  (not available, skipped: $p)" >&2; fi; done; }
 have() { apt-cache show "$1" >/dev/null 2>&1; }
+# downloads from GitHub occasionally time out (HTTP 504): retry hard
+dl() { curl -fsSL --retry 8 --retry-all-errors --retry-delay 15 --connect-timeout 30 "$@"; }
 
 step "Base system ($EDITION edition)"
 cat /etc/os-release
@@ -164,7 +166,7 @@ fi
 
 if [ "$EDITION" = desktop ]; then
 step "yt-dlp (lets the media player stream YouTube with hardware decoding)"
-if curl -fsSL --retry 3 -o /usr/local/bin/yt-dlp https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux_aarch64; then
+if dl -o /usr/local/bin/yt-dlp https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux_aarch64; then
   chmod 755 /usr/local/bin/yt-dlp
   /usr/local/bin/yt-dlp --version || true
 else
@@ -177,29 +179,42 @@ step "Built-in Wi-Fi drivers for X96 Mini variants (RTL8189ES / RTL8189FTV)"
 build_wifi_drivers() {
   local tc_url="https://github.com/ophub/kernel/releases/download/toolchain/arm-gnu-toolchain-15.3.rel1-aarch64-aarch64-none-linux-gnu.tar.xz"
   local tcdir=/tmp/x96os/toolchain src=/tmp/x96os/wifi kbuild="/lib/modules/$KVER/build"
-  [ -e "$kbuild/Makefile" ] || { echo "no kernel headers at $kbuild, skipping"; return 0; }
+  [ -e "$kbuild/Makefile" ] || { echo "::error::no kernel headers at $kbuild"; return 1; }
   mkdir -p "$tcdir" "$src"
-  curl -fsSL --retry 3 "$tc_url" | tar -xJ -C "$tcdir"
-  local cross; cross="$(ls -d "$tcdir"/*/bin | head -n1)/aarch64-none-linux-gnu-"
-  local dest="/lib/modules/$KVER/kernel/drivers/net/wireless/x96os"
+  local cross=""
+  # ophub's kernels are built with this GNU toolchain; Debian's gcc is the fallback
+  if dl "$tc_url" -o /tmp/x96os/toolchain.tar.xz && tar -xJf /tmp/x96os/toolchain.tar.xz -C "$tcdir"; then
+    cross="$(ls -d "$tcdir"/*/bin | head -n1)/aarch64-none-linux-gnu-"
+    echo "compiler: ophub GNU toolchain"
+  else
+    echo "toolchain download failed, falling back to Debian gcc"
+    "${APT[@]}" install --no-install-recommends gcc libc6-dev
+    echo "compiler: $(gcc --version | head -n1)"
+  fi
+  rm -f /tmp/x96os/toolchain.tar.xz
+  local dest="/lib/modules/$KVER/kernel/drivers/net/wireless/x96os" missing=""
   mkdir -p "$dest"
   for spec in "8189es:master" "8189fs:rtl8189fs"; do
     local mod="${spec%%:*}" branch="${spec#*:}"
     if modinfo -k "$KVER" "$mod" >/dev/null 2>&1; then echo "$mod already in kernel"; continue; fi
     rm -rf "$src/$mod"; mkdir -p "$src/$mod"
-    curl -fsSL --retry 3 "https://github.com/jwrdegoede/rtl8189ES_linux/archive/refs/heads/$branch.tar.gz" \
-      | tar -xz -C "$src/$mod" --strip-components=1
+    if ! dl "https://github.com/jwrdegoede/rtl8189ES_linux/archive/refs/heads/$branch.tar.gz" -o "$src/$mod.tar.gz" \
+       || ! tar -xzf "$src/$mod.tar.gz" -C "$src/$mod" --strip-components=1; then
+      echo "::error::could not download the $mod driver source"; missing="$missing $mod"; continue
+    fi
     if make -C "$src/$mod" -j"$(nproc)" ARCH=arm64 CROSS_COMPILE="$cross" CC="${cross}gcc" LD="${cross}ld.bfd" \
          KSRC="$kbuild" KVER="$KVER" M="$src/$mod" modules > "$src/$mod.log" 2>&1; then
       install -m644 "$src/$mod/$mod.ko" "$dest/" && echo "built $mod.ko"
     else
-      echo "WARNING: $mod did not build (last lines):"; tail -25 "$src/$mod.log"
+      echo "::error::$mod did not build (last lines):"; tail -25 "$src/$mod.log"; missing="$missing $mod"
     fi
   done
   depmod -a "$KVER" || true
   rm -rf "$tcdir" "$src"
+  [ -z "$missing" ] || { echo "::error::Wi-Fi drivers missing:$missing"; return 1; }
 }
-build_wifi_drivers || echo "WARNING: Wi-Fi driver build skipped"
+# an image without the built-in Wi-Fi drivers must never be published
+build_wifi_drivers || { echo "::error::built-in Wi-Fi driver build failed, stopping"; exit 1; }
 
 step "Apply X96 OS configuration overlay"
 if [ "$EDITION" = desktop ]; then
