@@ -78,6 +78,25 @@ else
   echo "kernel has the TEXT_OFFSET patch: boots directly, no u-boot.ext needed"
 fi
 grep -q 'meson-gxl-s905w-x96-mini.dtb' "$MNT/boot/uEnv.txt" || fail "uEnv.txt does not point to the X96 Mini dtb"
+# The real box boots: stock Android u-boot -> aml_autoscript / s905_autoscript -> uEnv.txt -> kernel.
+for f in aml_autoscript s905_autoscript boot.scr emmc_autoscript zImage uInitrd uEnv.txt; do
+  [ -s "$MNT/boot/$f" ] || fail "boot file missing or empty: $f"
+done
+FDTPATH="$(awk -F= '/^FDT=/{print $2}' "$MNT/boot/uEnv.txt")"
+[ -s "$MNT/boot$FDTPATH" ] || fail "device tree $FDTPATH not found on the boot partition"
+RUUID="$(blkid -s UUID -o value "$ROOTP")"
+grep -q "root=UUID=$RUUID" "$MNT/boot/uEnv.txt" || fail "uEnv.txt root UUID does not match the rootfs ($RUUID)"
+echo "boot chain OK: autoscripts present, $FDTPATH present, root=UUID=$RUUID matches"
+# Kernel + initrd for running the image in QEMU (scripts/run-qemu.sh / .ps1): the ophub kernel has
+# virtio and USB-storage support, so the same kernel boots the "virtual X96 Mini".
+KIMG="$(ls -1 "$MNT"/boot/vmlinuz-* 2>/dev/null | head -n1 || true)"
+KINI="$(ls -1 "$MNT"/boot/initrd.img-* 2>/dev/null | head -n1 || true)"
+if [ -n "$KIMG" ] && [ -n "$KINI" ]; then
+  cp "$KIMG" "$OUTDIR/x96os-qemu-vmlinuz"; cp "$KINI" "$OUTDIR/x96os-qemu-initrd.img"
+  echo "exported $(basename "$KIMG") + $(basename "$KINI") for QEMU testing"
+else
+  echo "WARNING: kernel/initrd not found in /boot, QEMU test files not exported"
+fi
 cat "$MNT/etc/ophub-release" 2>/dev/null || true
 
 # ------------------------------------------------------------------ 2. artwork + themes (host side, arch independent)
@@ -97,7 +116,10 @@ done
 log "Installing WhiteSur themes (macOS look)"
 TH="$WORK/themes"; mkdir -p "$TH"
 for r in WhiteSur-gtk-theme WhiteSur-icon-theme WhiteSur-cursors; do
-  git clone -q --depth 1 "https://github.com/vinceliuice/$r" "$TH/$r"
+  for try in 1 2 3 4; do
+    git clone -q --depth 1 "https://github.com/vinceliuice/$r" "$TH/$r" && break
+    rm -rf "$TH/$r"; [ "$try" = 4 ] && fail "could not download $r"; sleep 20
+  done
   echo "$r $(git -C "$TH/$r" rev-parse --short HEAD)" >> "$WORK/themes.txt"
 done
 install -d "$MNT/usr/share/themes" "$MNT/usr/share/icons" "$MNT/usr/share/plank/themes"
