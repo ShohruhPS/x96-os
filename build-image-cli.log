@@ -1,0 +1,516 @@
+Input Armbian_26.11.0-trunk_trixie_arm64_6.18.62.img.gz is not the s905w-x96-mini image, using Armbian_26.11.0_amlogic_s905w-x96-mini_trixie_6.12.116_server_2026.11.08.img.gz
+Building X96 OS 1.0 (cli edition)
+
+=================== Unpacking Armbian_26.11.0_amlogic_s905w-x96-mini_trixie_6.12.116_server_2026.11.08.img.gz ===================
+-rw-r--r-- 1 root root 6.8G Nov  8 16:46 /tmp/x96os-work/x96os.img
+Model:  (file)
+Disk /tmp/x96os-work/x96os.img: 6916MiB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags: 
+
+Number  Start    End      Size     Type     File system  Flags
+ 1      4.00MiB  515MiB   511MiB   primary  fat32        lba
+ 2      516MiB   6916MiB  6400MiB  primary  ext4
+
+/dev/loop0p1: LABEL_FATBOOT="BOOT" LABEL="BOOT" UUID="735D-CB9C" BLOCK_SIZE="512" TYPE="vfat" PARTUUID="e67e76fe-01"
+/dev/loop0p2: LABEL="ROOTFS" UUID="2df85ef4-dd92-42b5-8bbe-6fbc6807ba03" BLOCK_SIZE="4096" TYPE="ext4" PARTUUID="e67e76fe-02"
+
+=================== Boot partition (should already be set up for the X96 Mini) ===================
+total 147180
+drwxr-xr-x  4 root root     4096 Jan  1  1970 .
+drwxr-xr-x 19 root root     4096 Nov  8 16:45 ..
+-rwxr-xr-x  1 root root  7031678 Nov  8 16:45 System.map-6.12.116-ophub
+-rwxr-xr-x  1 root root      709 Nov  8 16:45 aml_autoscript
+-rwxr-xr-x  1 root root      637 Nov  8 16:45 aml_autoscript.cmd
+-rwxr-xr-x  1 root root     1536 Nov  8 16:45 armbian_first_run.txt.template
+-rwxr-xr-x  1 root root      953 Nov  8 16:45 boot-emmc.cmd
+-rwxr-xr-x  1 root root      571 Nov  8 16:45 boot-emmc.ini
+-rwxr-xr-x  1 root root     1025 Nov  8 16:45 boot-emmc.scr
+-rwxr-xr-x  1 root root    38518 Nov  8 16:45 boot.bmp
+-rwxr-xr-x  1 root root     1051 Nov  8 16:45 boot.cmd
+-rwxr-xr-x  1 root root      589 Nov  8 16:45 boot.ini
+-rwxr-xr-x  1 root root     1123 Nov  8 16:45 boot.scr
+-rwxr-xr-x  1 root root   250613 Nov  8 16:45 config-6.12.116-ophub
+drwxr-xr-x  3 root root     4096 Nov  8 16:45 dtb
+-rwxr-xr-x  1 root root      831 Nov  8 16:45 emmc_autoscript
+-rwxr-xr-x  1 root root      759 Nov  8 16:45 emmc_autoscript.cmd
+drwxr-xr-x  2 root root     4096 Nov  8 16:45 extlinux
+-rwxr-xr-x  1 root root 18009832 Nov  8 16:45 initrd.img-6.12.116-ophub
+-rwxr-xr-x  1 root root     1351 Nov  8 16:45 s905_autoscript
+-rwxr-xr-x  1 root root     1279 Nov  8 16:45 s905_autoscript.cmd
+-rwxr-xr-x  1 root root   702771 Nov  8 16:45 u-boot-n1.bin
+-rwxr-xr-x  1 root root   553489 Nov  8 16:45 u-boot-p201.bin
+-rwxr-xr-x  1 root root   606670 Nov  8 16:45 u-boot-p212.bin
+-rwxr-xr-x  1 root root   633376 Nov  8 16:45 u-boot-r3300l.bin
+-rwxr-xr-x  1 root root   650183 Nov  8 16:45 u-boot-s905x-s905lb.bin
+-rwxr-xr-x  1 root root   646455 Nov  8 16:45 u-boot-s905x-s912.bin
+-rwxr-xr-x  1 root root   709768 Nov  8 16:45 u-boot.sd
+-rwxr-xr-x  1 root root   709768 Nov  8 16:45 u-boot.usb
+-rwxr-xr-x  1 root root      430 Nov  8 16:45 uEnv.txt
+-rwxr-xr-x  1 root root 18009896 Nov  8 16:45 uInitrd
+-rwxr-xr-x  1 root root 18009896 Nov  8 16:45 uInitrd-6.12.116-ophub
+-rwxr-xr-x  1 root root 42021376 Nov  8 16:45 vmlinuz-6.12.116-ophub
+-rwxr-xr-x  1 root root 42021376 Nov  8 16:45 zImage
+FDT=/dtb/amlogic/meson-gxl-s905w-x96-mini.dtb
+APPEND=root=UUID=2df85ef4-dd92-42b5-8bbe-6fbc6807ba03 rootflags=data=writeback rw rootwait rootfstype=ext4 console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 max_loop=128 cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory swapaccount=1 video=HDMI-A-1:1920x1080@60e plymouth.enable=0
+kernel has the TEXT_OFFSET patch: boots directly, no u-boot.ext needed
+boot chain OK: autoscripts present, /dtb/amlogic/meson-gxl-s905w-x96-mini.dtb present, root=UUID=2df85ef4-dd92-42b5-8bbe-6fbc6807ba03 matches
+exported vmlinuz-6.12.116-ophub + initrd.img-6.12.116-ophub for QEMU testing
+PLATFORM='amlogic'
+VERSION_CODEID='debian'
+VERSION_CODENAME='trixie'
+MODEL_ID='113'
+MODEL_NAME='X96-Mini'
+SOC='s905w'
+FDTFILE='meson-gxl-s905w-x96-mini.dtb'
+FAMILY='meson-gxl'
+BOARD='s905w-x96-mini'
+KERNEL_REPO='ophub/kernel'
+KERNEL_TAGS='stable'
+KERNEL_VERSION='6.12.116'
+KERNEL_SIGNATURE='ophub'
+DOWNLOAD_TYPE='deb'
+KERNEL_BACKUP='yes'
+BOOT_CONF='uEnv.txt'
+ROOTFS_TYPE='ext4'
+DISK_TYPE='usb'
+AMPART_STATUS='no'
+MLUBOOT_STATUS='no'
+MAINLINE_UBOOT=''
+BOOTLOADER_IMG=''
+BUILD_REPOSITORY='github.com/armbian/build'
+REBUILD_REPOSITORY='github.com/ophub/amlogic-s9xxx-armbian'
+CONTRIBUTORS='TThanhXuan'
+BUILDER_NAME='X96OS'
+PACKAGED_DATE='2026-11-08'
+UBOOT_OVERLOAD='u-boot-s905x-s912.bin'
+
+=================== Preparing chroot ===================
+
+=================== Running customize-chroot.sh ===================
+
+---------- Base system (cli edition) ----------
+PRETTY_NAME="Armbian-unofficial 26.11.0-trunk trixie"
+NAME="Debian GNU/Linux"
+VERSION_ID="13"
+VERSION="13 (trixie)"
+VERSION_CODENAME=trixie
+DEBIAN_VERSION_FULL=13.7
+ID=debian
+HOME_URL="https://www.armbian.com"
+SUPPORT_URL="https://forum.armbian.com"
+BUG_REPORT_URL="https://www.armbian.com/bugs"
+ARMBIAN_PRETTY_NAME="Armbian-unofficial 26.11.0-trunk trixie"
+kernel: 6.12.116-ophub
+PLATFORM='amlogic'
+VERSION_CODEID='debian'
+VERSION_CODENAME='trixie'
+MODEL_ID='113'
+MODEL_NAME='X96-Mini'
+SOC='s905w'
+FDTFILE='meson-gxl-s905w-x96-mini.dtb'
+FAMILY='meson-gxl'
+BOARD='s905w-x96-mini'
+KERNEL_REPO='ophub/kernel'
+KERNEL_TAGS='stable'
+KERNEL_VERSION='6.12.116'
+KERNEL_SIGNATURE='ophub'
+DOWNLOAD_TYPE='deb'
+KERNEL_BACKUP='yes'
+BOOT_CONF='uEnv.txt'
+ROOTFS_TYPE='ext4'
+DISK_TYPE='usb'
+AMPART_STATUS='no'
+MLUBOOT_STATUS='no'
+MAINLINE_UBOOT=''
+BOOTLOADER_IMG=''
+BUILD_REPOSITORY='github.com/armbian/build'
+REBUILD_REPOSITORY='github.com/ophub/amlogic-s9xxx-armbian'
+CONTRIBUTORS='TThanhXuan'
+BUILDER_NAME='X96OS'
+PACKAGED_DATE='2026-11-08'
+UBOOT_OVERLOAD='u-boot-s905x-s912.bin'
+
+---------- APT sources (enable contrib, non-free, non-free-firmware) ----------
+URIs: http://deb.debian.org/debian
+Suites: trixie trixie-updates trixie-backports
+Components: main contrib non-free non-free-firmware
+URIs: http://security.debian.org/
+Suites: trixie-security
+Components: main contrib non-free non-free-firmware
+URIs: http://apt.armbian.com
+Suites: trixie
+Components: main trixie-utils trixie-desktop
+URIs: https://github.armbian.com/configng
+Suites: stable
+Components: main
+armbian-bsp-cli-odroidn2-current set on hold.
+linux-dtb-current-meson64 set on hold.
+linux-image-current-meson64 set on hold.
+linux-u-boot-odroidn2-current set on hold.
+Hit:1 http://deb.debian.org/debian trixie InRelease
+Get:2 http://security.debian.org trixie-security InRelease [43.4 kB]
+Get:3 http://deb.debian.org/debian trixie-updates InRelease [47.3 kB]
+Get:4 http://deb.debian.org/debian trixie-backports InRelease [54.0 kB]
+Get:5 http://security.debian.org trixie-security/main arm64 Packages [300 kB]
+Get:6 http://deb.debian.org/debian trixie-backports/main all Contents (deb).diff/Index [63.7 kB]
+Hit:7 https://github.armbian.com/configng stable InRelease
+Get:9 http://deb.debian.org/debian trixie-backports/main all Contents (deb) T-2026-11-08-1402.44-F-2026-11-08-1402.44.pdiff [31 B]
+Get:9 http://deb.debian.org/debian trixie-backports/main all Contents (deb) T-2026-11-08-1402.44-F-2026-11-08-1402.44.pdiff [31 B]
+Hit:8 http://armbian.lv.auroradev.org/apt trixie InRelease
+Fetched 509 kB in 1s (344 kB/s)
+Reading package lists...
+
+---------- Install command-line system ----------
+Reading package lists...
+Building dependency tree...
+Reading state information...
+network-manager is already the newest version (1.52.1-1).
+wpasupplicant is already the newest version (2:2.10-24).
+iw is already the newest version (6.9-1+b1).
+wireless-regdb is already the newest version (2026.05.30-1~deb13u1).
+htop is already the newest version (3.4.1-5).
+tmux is already the newest version (3.5a-3).
+tmux set to manually installed.
+nano is already the newest version (8.4-1+deb13u1).
+less is already the newest version (668-1).
+curl is already the newest version (8.14.1-2+deb13u7).
+wget is already the newest version (1.25.0-2).
+git is already the newest version (1:2.47.3-0+deb13u1).
+rsync is already the newest version (3.5.0+ds1-0+deb13u1).
+unzip is already the newest version (6.0-29+deb13u1).
+bash-completion is already the newest version (1:2.16.0-7).
+man-db is already the newest version (2.13.1-1).
+file is already the newest version (1:5.46-5).
+file set to manually installed.
+lsof is already the newest version (4.99.4+dfsg-2).
+psmisc is already the newest version (23.7-2).
+procps is already the newest version (2:4.0.4-9).
+procps set to manually installed.
+iproute2 is already the newest version (6.15.0-1).
+iputils-ping is already the newest version (3:20240905-3).
+ethtool is already the newest version (1:6.14.2-1).
+ethtool set to manually installed.
+usbutils is already the newest version (1:018-2).
+pciutils is already the newest version (1:3.13.0-2).
+console-setup is already the newest version (1.242~deb13u1).
+kbd is already the newest version (2.7.1-2).
+kbd set to manually installed.
+alsa-utils is already the newest version (1.2.14-1).
+locales is already the newest version (2.41-12+deb13u4).
+tzdata is already the newest version (2026f-0+deb13u1).
+sudo is already the newest version (1.9.16p2-3+deb13u2).
+ca-certificates is already the newest version (20250419+deb13u1).
+openssh-server is already the newest version (1:10.0p1-7+deb13u4).
+make is already the newest version (4.4.1-2).
+make set to manually installed.
+bc is already the newest version (1.07.1-4+b1).
+python3 is already the newest version (3.13.5-1).
+python3 set to manually installed.
+The following additional packages will be installed:
+  bind9-host bind9-libs libfstrm0 libjson-c5 liblmdb0 libmaxminddb0
+  libprotobuf-c1 liburcu8t64 libuv1t64 libxml2
+Suggested packages:
+  pulseaudio-module-bluetooth cloud-init mmdb-bin
+Recommended packages:
+  gdisk
+The following NEW packages will be installed:
+  bind9-dnsutils bind9-host bind9-libs bluez cloud-guest-utils earlyoom
+  libfstrm0 libjson-c5 liblmdb0 libmaxminddb0 libprotobuf-c1 liburcu8t64
+  libuv1t64 libxml2 ncdu zip
+0 upgraded, 16 newly installed, 0 to remove and 5 not upgraded.
+Need to get 4587 kB of archives.
+After this operation, 15.2 MB of additional disk space will be used.
+Get:1 http://deb.debian.org/debian trixie/main arm64 earlyoom arm64 1.8.2-1+b1 [32.0 kB]
+Get:2 http://deb.debian.org/debian trixie/main arm64 libfstrm0 arm64 0.6.1-1+b3 [21.0 kB]
+Get:3 http://deb.debian.org/debian trixie/main arm64 libjson-c5 arm64 0.18+ds-1 [45.2 kB]
+Get:4 http://deb.debian.org/debian trixie/main arm64 liblmdb0 arm64 0.9.31-1+b2 [43.5 kB]
+Get:5 http://deb.debian.org/debian trixie/main arm64 libmaxminddb0 arm64 1.12.2-1 [25.9 kB]
+Get:6 http://deb.debian.org/debian trixie/main arm64 libprotobuf-c1 arm64 1.5.1-1 [19.6 kB]
+Get:7 http://deb.debian.org/debian trixie/main arm64 liburcu8t64 arm64 0.15.2-2 [73.9 kB]
+Get:8 http://deb.debian.org/debian trixie/main arm64 libuv1t64 arm64 1.50.0-2 [148 kB]
+Get:9 http://deb.debian.org/debian trixie/main arm64 libxml2 arm64 2.12.7+dfsg+really2.9.14-2.1+deb13u3 [631 kB]
+Get:10 http://deb.debian.org/debian trixie/main arm64 cloud-guest-utils all 0.33-1 [27.9 kB]
+Get:11 http://deb.debian.org/debian trixie/main arm64 ncdu arm64 1.22-1 [48.0 kB]
+Get:12 http://deb.debian.org/debian trixie/main arm64 zip arm64 3.0-15+deb13u1 [227 kB]
+Get:14 http://security.debian.org trixie-security/main arm64 bind9-libs arm64 1:9.20.30-1~deb13u1 [1112 kB]
+Get:15 http://security.debian.org trixie-security/main arm64 bind9-host arm64 1:9.20.30-1~deb13u1 [53.9 kB]
+Get:16 http://security.debian.org trixie-security/main arm64 bind9-dnsutils arm64 1:9.20.30-1~deb13u1 [159 kB]
+Get:13 http://apt.armbian.com trixie/trixie-utils arm64 bluez arm64 5.82-1.1+rpt2 [1917 kB]
+Fetched 4587 kB in 1s (6073 kB/s)
+Selecting previously unselected package earlyoom.
+(Reading database ... dpkg: warning: files list file for package 'linux-image-current-meson64' missing; assuming package has no files currently installed
+(Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 37465 files and directories currently installed.)
+Preparing to unpack .../00-earlyoom_1.8.2-1+b1_arm64.deb ...
+Unpacking earlyoom (1.8.2-1+b1) ...
+Selecting previously unselected package libfstrm0:arm64.
+Preparing to unpack .../01-libfstrm0_0.6.1-1+b3_arm64.deb ...
+Unpacking libfstrm0:arm64 (0.6.1-1+b3) ...
+Selecting previously unselected package libjson-c5:arm64.
+Preparing to unpack .../02-libjson-c5_0.18+ds-1_arm64.deb ...
+Unpacking libjson-c5:arm64 (0.18+ds-1) ...
+Selecting previously unselected package liblmdb0:arm64.
+Preparing to unpack .../03-liblmdb0_0.9.31-1+b2_arm64.deb ...
+Unpacking liblmdb0:arm64 (0.9.31-1+b2) ...
+Selecting previously unselected package libmaxminddb0:arm64.
+Preparing to unpack .../04-libmaxminddb0_1.12.2-1_arm64.deb ...
+Unpacking libmaxminddb0:arm64 (1.12.2-1) ...
+Selecting previously unselected package libprotobuf-c1:arm64.
+Preparing to unpack .../05-libprotobuf-c1_1.5.1-1_arm64.deb ...
+Unpacking libprotobuf-c1:arm64 (1.5.1-1) ...
+Selecting previously unselected package liburcu8t64:arm64.
+Preparing to unpack .../06-liburcu8t64_0.15.2-2_arm64.deb ...
+Unpacking liburcu8t64:arm64 (0.15.2-2) ...
+Selecting previously unselected package libuv1t64:arm64.
+Preparing to unpack .../07-libuv1t64_1.50.0-2_arm64.deb ...
+Unpacking libuv1t64:arm64 (1.50.0-2) ...
+Selecting previously unselected package libxml2:arm64.
+Preparing to unpack .../08-libxml2_2.12.7+dfsg+really2.9.14-2.1+deb13u3_arm64.deb ...
+Unpacking libxml2:arm64 (2.12.7+dfsg+really2.9.14-2.1+deb13u3) ...
+Selecting previously unselected package bind9-libs:arm64.
+Preparing to unpack .../09-bind9-libs_1%3a9.20.30-1~deb13u1_arm64.deb ...
+Unpacking bind9-libs:arm64 (1:9.20.30-1~deb13u1) ...
+Selecting previously unselected package bind9-host.
+Preparing to unpack .../10-bind9-host_1%3a9.20.30-1~deb13u1_arm64.deb ...
+Unpacking bind9-host (1:9.20.30-1~deb13u1) ...
+Selecting previously unselected package bind9-dnsutils.
+Preparing to unpack .../11-bind9-dnsutils_1%3a9.20.30-1~deb13u1_arm64.deb ...
+Unpacking bind9-dnsutils (1:9.20.30-1~deb13u1) ...
+Selecting previously unselected package bluez.
+Preparing to unpack .../12-bluez_5.82-1.1+rpt2_arm64.deb ...
+Unpacking bluez (5.82-1.1+rpt2) ...
+Selecting previously unselected package cloud-guest-utils.
+Preparing to unpack .../13-cloud-guest-utils_0.33-1_all.deb ...
+Unpacking cloud-guest-utils (0.33-1) ...
+Selecting previously unselected package ncdu.
+Preparing to unpack .../14-ncdu_1.22-1_arm64.deb ...
+Unpacking ncdu (1.22-1) ...
+Selecting previously unselected package zip.
+Preparing to unpack .../15-zip_3.0-15+deb13u1_arm64.deb ...
+Unpacking zip (3.0-15+deb13u1) ...
+Setting up liblmdb0:arm64 (0.9.31-1+b2) ...
+Setting up ncdu (1.22-1) ...
+Setting up liburcu8t64:arm64 (0.15.2-2) ...
+Setting up libmaxminddb0:arm64 (1.12.2-1) ...
+Setting up libfstrm0:arm64 (0.6.1-1+b3) ...
+Setting up libuv1t64:arm64 (1.50.0-2) ...
+Setting up earlyoom (1.8.2-1+b1) ...
+Running in chroot, ignoring request.
+invoke-rc.d: policy-rc.d denied execution of start.
+Created symlink '/etc/systemd/system/multi-user.target.wants/earlyoom.service' → '/usr/lib/systemd/system/earlyoom.service'.
+Setting up libprotobuf-c1:arm64 (1.5.1-1) ...
+Setting up bluez (5.82-1.1+rpt2) ...
+Running in chroot, ignoring request.
+invoke-rc.d: policy-rc.d denied execution of force-reload.
+Created symlink '/etc/systemd/user/default.target.wants/mpris-proxy.service' → '/usr/lib/systemd/user/mpris-proxy.service'.
+Running in chroot, ignoring request.
+invoke-rc.d: policy-rc.d denied execution of start.
+Created symlink '/etc/systemd/system/dbus-org.bluez.service' → '/usr/lib/systemd/system/bluetooth.service'.
+Created symlink '/etc/systemd/system/bluetooth.target.wants/bluetooth.service' → '/usr/lib/systemd/system/bluetooth.service'.
+Setting up zip (3.0-15+deb13u1) ...
+Setting up cloud-guest-utils (0.33-1) ...
+Setting up libjson-c5:arm64 (0.18+ds-1) ...
+Setting up libxml2:arm64 (2.12.7+dfsg+really2.9.14-2.1+deb13u3) ...
+Setting up bind9-libs:arm64 (1:9.20.30-1~deb13u1) ...
+Setting up bind9-host (1:9.20.30-1~deb13u1) ...
+Setting up bind9-dnsutils (1:9.20.30-1~deb13u1) ...
+Processing triggers for man-db (2.13.1-1) ...
+Processing triggers for dbus (1.16.2-2) ...
+Processing triggers for libc-bin (2.41-12+deb13u4) ...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+iperf3 is already the newest version (3.18-2+deb13u2).
+The following additional packages will be installed:
+  libsensors-config libsensors5
+Suggested packages:
+  fancontrol read-edid
+The following NEW packages will be installed:
+  btop fastfetch libsensors-config libsensors5 lm-sensors
+0 upgraded, 5 newly installed, 0 to remove and 5 not upgraded.
+Need to get 2082 kB of archives.
+After this operation, 6291 kB of additional disk space will be used.
+Get:1 http://deb.debian.org/debian trixie/main arm64 btop arm64 1.3.2-0.1 [416 kB]
+Get:2 http://deb.debian.org/debian trixie/main arm64 libsensors-config all 1:3.6.2-2 [16.2 kB]
+Get:3 http://deb.debian.org/debian trixie/main arm64 libsensors5 arm64 1:3.6.2-2 [36.4 kB]
+Get:4 http://deb.debian.org/debian trixie/main arm64 lm-sensors arm64 1:3.6.2-2 [92.3 kB]
+Get:5 http://armbian.lv.auroradev.org/apt trixie/trixie-utils arm64 fastfetch arm64 2.70.0 [1521 kB]
+Fetched 2082 kB in 1s (2784 kB/s)
+Selecting previously unselected package btop.
+(Reading database ... dpkg: warning: files list file for package 'linux-image-current-meson64' missing; assuming package has no files currently installed
+(Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 37723 files and directories currently installed.)
+Preparing to unpack .../btop_1.3.2-0.1_arm64.deb ...
+Unpacking btop (1.3.2-0.1) ...
+Selecting previously unselected package fastfetch.
+Preparing to unpack .../fastfetch_2.70.0_arm64.deb ...
+Unpacking fastfetch (2.70.0) ...
+Selecting previously unselected package libsensors-config.
+Preparing to unpack .../libsensors-config_1%3a3.6.2-2_all.deb ...
+Unpacking libsensors-config (1:3.6.2-2) ...
+Selecting previously unselected package libsensors5:arm64.
+Preparing to unpack .../libsensors5_1%3a3.6.2-2_arm64.deb ...
+Unpacking libsensors5:arm64 (1:3.6.2-2) ...
+Selecting previously unselected package lm-sensors.
+Preparing to unpack .../lm-sensors_1%3a3.6.2-2_arm64.deb ...
+Unpacking lm-sensors (1:3.6.2-2) ...
+Setting up fastfetch (2.70.0) ...
+Setting up libsensors-config (1:3.6.2-2) ...
+Setting up btop (1.3.2-0.1) ...
+Setting up libsensors5:arm64 (1:3.6.2-2) ...
+Setting up lm-sensors (1:3.6.2-2) ...
+Created symlink '/etc/systemd/system/multi-user.target.wants/lm-sensors.service' → '/usr/lib/systemd/system/lm-sensors.service'.
+Processing triggers for man-db (2.13.1-1) ...
+Processing triggers for libc-bin (2.41-12+deb13u4) ...
+
+---------- Firmware for Wi-Fi / Bluetooth ----------
+keeping armbian-firmware 26.11.0-trunk
+  firmware ok: meson/vdec/gxl_h264.bin
+  firmware ok: brcm
+  firmware ok: rtlwifi
+  firmware ok: mediatek
+
+---------- zram compressed swap ----------
+using armbian-zram-config
+
+---------- Built-in Wi-Fi drivers for X96 Mini variants (RTL8189ES / RTL8189FTV) ----------
+compiler: ophub GNU toolchain
+built 8189es.ko
+built 8189fs.ko
+
+---------- Apply X96 OS configuration overlay ----------
+
+---------- Branding ----------
+  removing console auto-login: /etc/systemd/system/getty@.service.d/override.conf
+  removing console auto-login: /etc/systemd/system/serial-getty@.service.d/override.conf
+
+---------- Locale and time zone ----------
+Generating locales (this might take a while)...
+  en_US.UTF-8... done
+Generation complete.
+
+---------- User account ----------
+
+---------- Services ----------
+Created symlink '/etc/systemd/system/default.target' → '/usr/lib/systemd/system/multi-user.target'.
+Created symlink '/etc/systemd/system/network-online.target.wants/NetworkManager-wait-online.service' → '/usr/lib/systemd/system/NetworkManager-wait-online.service'.
+Created symlink '/etc/systemd/system/multi-user.target.wants/x96os-firstboot.service' → '/etc/systemd/system/x96os-firstboot.service'.
+Created symlink '/etc/systemd/system/multi-user.target.wants/x96os-tune.service' → '/etc/systemd/system/x96os-tune.service'.
+Created symlink '/etc/systemd/system/multi-user.target.wants/x96os-audio.service' → '/etc/systemd/system/x96os-audio.service'.
+Synchronizing state of earlyoom.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install enable earlyoom
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following packages were automatically installed and are no longer required:
+  distro-info-data python-apt-common python3-apt python3-dbus
+  python3-distro-info
+Use 'apt autoremove' to remove them.
+The following packages will be REMOVED:
+  unattended-upgrades*
+0 upgraded, 0 newly installed, 1 to remove and 5 not upgraded.
+After this operation, 325 kB disk space will be freed.
+(Reading database ... dpkg: warning: files list file for package 'linux-image-current-meson64' missing; assuming package has no files currently installed
+(Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 37861 files and directories currently installed.)
+Removing unattended-upgrades (2.12) ...
+Processing triggers for man-db (2.13.1-1) ...
+(Reading database ... dpkg: warning: files list file for package 'linux-image-current-meson64' missing; assuming package has no files currently installed
+(Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 37821 files and directories currently installed.)
+Purging configuration files for unattended-upgrades (2.12) ...
+
+---------- Clean up ----------
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following packages will be REMOVED:
+  distro-info-data* python-apt-common* python3-apt* python3-dbus*
+  python3-distro-info*
+0 upgraded, 0 newly installed, 5 to remove and 5 not upgraded.
+After this operation, 1918 kB disk space will be freed.
+(Reading database ... dpkg: warning: files list file for package 'linux-image-current-meson64' missing; assuming package has no files currently installed
+(Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 37814 files and directories currently installed.)
+Removing python3-distro-info (1.13) ...
+Removing python3-apt (3.0.0) ...
+Removing distro-info-data (0.66+deb13u2) ...
+Removing python-apt-common (3.0.0) ...
+Removing python3-dbus (1.4.0-1) ...
+
+---------- Build info ----------
+X96 OS 1.0 built 2026-11-08 16:48 UTC
+Base: Armbian-unofficial 26.11.0-trunk trixie (trixie), kernel 6.12.116-ophub
+Edition: cli
+Wi-Fi modules added: 8189es.ko 8189fs.ko
+Themes: 
+Packages installed: 499
+Root usage: 2.0G
+customize-chroot.sh finished OK
+
+=================== Leaving chroot ===================
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/loop0p2    6.1G  1.9G  4.3G  31% /tmp/x96os-work/rootfs
+/dev/loop0p1    510M  155M  356M  31% /tmp/x96os-work/rootfs/boot
+
+=================== Shrinking rootfs ===================
+e2fsck 1.47.2 (1-Jan-2025)
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+ROOTFS: 58623/409600 files (0.1% non-contiguous), 530639/1638400 blocks
+blocks: current=1638400 minimum=750033 target=903633 (block size 4096)
+resize2fs 1.47.2 (1-Jan-2025)
+Resizing the filesystem on /dev/loop0p2 to 903633 (4k) blocks.
+The filesystem on /dev/loop0p2 is now 903633 (4k) blocks long.
+
+Disk /tmp/x96os-work/x96os.img: 6.75 GiB, 7251951616 bytes, 14163968 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0xe67e76fe
+
+Old situation:
+
+Device                     Boot   Start      End  Sectors  Size Id Type
+/tmp/x96os-work/x96os.img1         8192  1054719  1046528  511M  c W95 FAT32 (LBA)
+/tmp/x96os-work/x96os.img2      1056768 14163967 13107200  6.3G 83 Linux
+
+/tmp/x96os-work/x96os.img2: 
+New situation:
+Disklabel type: dos
+Disk identifier: 0xe67e76fe
+
+Device                     Boot   Start     End Sectors  Size Id Type
+/tmp/x96os-work/x96os.img1         8192 1054719 1046528  511M  c W95 FAT32 (LBA)
+/tmp/x96os-work/x96os.img2      1056768 8285831 7229064  3.4G 83 Linux
+
+The partition table has been altered.
+e2fsck 1.47.2 (1-Jan-2025)
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+ROOTFS: 58623/229376 files (0.1% non-contiguous), 518530/903633 blocks
+Model:  (file)
+Disk /tmp/x96os-work/x96os.img: 4047MiB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags: 
+
+Number  Start    End      Size     Type     File system  Flags
+ 1      4.00MiB  515MiB   511MiB   primary  fat32        lba
+ 2      516MiB   4046MiB  3530MiB  primary  ext4
+
+
+=================== Compressing ===================
+/home/runner/work/x96-os/x96-os/out/X96OS-1.0-cli-x96mini-s905w-20261108.img: 772.0 MiB / 4046.8 MiB = 0.191, 21 MiB/s, 3:12
+total 830M
+-rw-r--r-- 1 runner runner 772M Nov  8 16:48 X96OS-1.0-cli-x96mini-s905w-20261108.img.xz
+-rw-r--r-- 1 runner runner  110 Nov  8 16:51 X96OS-1.0-cli-x96mini-s905w-20261108.img.xz.sha256
+-rw-r--r-- 1 runner runner  220 Nov  8 16:48 x96os-build-info-cli.txt
+-rwxr-xr-x 1 runner runner  18M Nov  8 16:46 x96os-qemu-initrd.img
+-rwxr-xr-x 1 runner runner  41M Nov  8 16:46 x96os-qemu-vmlinuz
+
+=================== Done: /home/runner/work/x96-os/x96-os/out/X96OS-1.0-cli-x96mini-s905w-20261108.img.xz ===================

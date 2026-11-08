@@ -1,0 +1,113 @@
+== X96 OS smoke test: X96OS-1.0-cli-x96mini-s905w-20261108.img.xz
+QEMU CPU mode: -accel tcg,thread=multi -cpu cortex-a53 (timings below are emulated, the real box is faster)
+PASS  boots to login in 62s (emulated CPU, seen via ssh)
+PASS  SSH login with the default account
+armbian-firstrun: active
+PASS  systemd state: running
+
+---- system ----
+X96OS_VERSION=1.0
+X96OS_BUILD_DATE=2026-11-08
+X96OS_DEVICE="X96 Mini (Amlogic S905W)"
+X96OS_EDITION=cli
+X96OS_KERNEL=6.12.116-ophub
+6.12.116-ophub
+PASS  no failed services
+PASS  sudo works
+PASS  first boot grew the root filesystem to 16G
+PASS  first-boot setup finished
+PASS  edition marker: cli
+PASS  no password-less console login
+PASS  login greeting is the X96 OS one
+PASS  network (eth0) up via NetworkManager
+PASS  NetworkManager connected
+PASS  DNS works
+
+---- drivers & firmware (in the image) ----
+PASS  Wi-Fi driver 8189es.ko present for 6.12.116-ophub
+PASS  Wi-Fi driver 8189fs.ko present for 6.12.116-ophub
+PASS  Wi-Fi driver 8189es loads into kernel 6.12.116-ophub
+PASS  Wi-Fi driver 8189fs loads into kernel 6.12.116-ophub
+  dmesg: [    0.658189] raid6: int64x4  gen()  2295 MB/s
+  dmesg: [    1.548189] usbserial: USB Serial support registered for cp210x
+  dmesg: [  154.312992] 8189es: loading out-of-tree module taints kernel.
+  dmesg: [  154.358558] RTW: rtl8189es v5.8.9_35085.20190919
+  dmesg: [  159.660234] RTW: rtl8189fs v5.7.9_35795.20191128
+  ok     module brcmfmac
+  ok     module rtw88_8723ds
+  ok     module rtw88_8821cs
+  ok     module rtw88_8822bs
+  ok     module ath9k_htc
+  ok     module mt7601u
+  ok     module rt2800usb
+  ok     module rtl8xxxu
+  ok     module mt76x2u
+  ok     module lima
+  ok     module meson_vdec
+  /lib/firmware/brcm/brcmfmac43455-sdio.bin
+  /lib/firmware/meson/vdec/gxl_h264.bin
+  /lib/firmware/rtlwifi/rtl8188eufw.bin
+
+---- tuning ----
+  none mq-deadline kyber [bfq] 
+  100
+  bbr
+  /dev/zram0 partition 1.4G 0B 5
+  32768
+PASS  zram swap active
+PASS  BFQ I/O scheduler
+PASS  earlyoom running
+PASS  BBR congestion control
+
+---- memory at idle (2 GB box) ----
+               total        used        free      shared  buff/cache   available
+Mem:            1971         323        1596          28         208        1647
+Swap:           1478           0        1478
+RAM used at idle: 321 MiB
+  RSS COMMAND
+18888 NetworkManager
+14256 systemd
+13644 systemd-resolve
+12176 systemd
+10304 sshd-session
+ 9772 systemd-journal
+ 9444 systemd-udevd
+ 8812 systemd-logind
+ 7396 sshd
+ 7128 sshd-session
+ 6532 wpa_supplicant
+
+---- boot time (emulated CPU) ----
+Startup finished in 15.132s (kernel) + 1min 33.802s (userspace) = 1min 48.934s 
+multi-user.target reached after 1min 33.477s in userspace.
+24.615s console-setup.service
+23.531s x96os-firstboot.service
+18.968s dev-zram1.device
+18.913s dev-zram0.device
+10.933s NetworkManager.service
+10.689s lm-sensors.service
+10.216s rng-tools-debian.service
+10.047s chrony.service
+ 9.959s x96os-audio.service
+ 9.379s rsyslog.service
+
+---- greeting ----
+  ██╗  ██╗ █████╗  ██████╗      ██████╗ ███████╗
+  ╚██╗██╔╝██╔══██╗██╔════╝     ██╔═══██╗██╔════╝
+   ╚███╔╝ ╚██████║███████╗     ██║   ██║███████╗
+   ██╔██╗  ╚═══██║██╔═══██╗    ██║   ██║╚════██║
+  ██╔╝ ██╗ █████╔╝╚██████╔╝    ╚██████╔╝███████║
+  ╚═╝  ╚═╝ ╚════╝  ╚═════╝      ╚═════╝ ╚══════╝
+
+  X96 OS 1.0 · cli edition · Debian 13.7 · kernel 6.12.116-ophub
+  ────────────────────────────────────────────────
+  CPU       4 × Cortex-A53
+  Memory    309 MiB / 1.9 GiB used · zram swap 0 / 1478 MiB
+  Storage   1.9G / 16G used (13%)
+  Network   eth0 10.0.2.15
+  Uptime    3m · load 2.08 2.04 0.92
+
+  x96os help  ·  x96os wifi  ·  x96os install
+PASS  screenshot saved (screen-cli.png)
+
+RESULT: 22 passed, 0 failed
