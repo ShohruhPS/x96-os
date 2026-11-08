@@ -41,6 +41,7 @@ qemu-system-aarch64 -M virt "${ACCEL[@]}" -smp 4 -m 2048 \
   -device virtio-gpu-pci,xres=1920,yres=1080 -display none \
   -netdev user,id=net0,hostfwd=tcp::$SSHP-:22 -device virtio-net-pci,netdev=net0 \
   -serial file:"$SERIAL" -monitor unix:"$T/mon.sock",server,nowait \
+  -qmp unix:"$T/qmp.sock",server,nowait \
   -daemonize -pidfile "$T/qemu.pid"
 START=$(date +%s)
 
@@ -68,11 +69,26 @@ if "${SSH[@]}" true 2>/dev/null; then ok "SSH login with the default account"
 else bad "SSH login failed"; tail -60 "$SERIAL" | tee -a "$REPORT"; exit 1; fi
 
 # admin tools (modinfo, sysctl, swapon, modprobe) live in /usr/sbin, which a normal user's PATH lacks
-r() { "${SSH[@]}" "export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin; $*" 2>&1; }
+# r CMD: run on the box; retries when the SSH connection itself drops (exit 255), keeps the exit code
+r() {
+  local out rc i
+  for i in 1 2 3 4 5 6 7 8; do
+    out="$("${SSH[@]}" "export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin; $*" 2>&1)"; rc=$?
+    if [ "$rc" -eq 255 ] && echo "$out" | grep -qiE 'kex_exchange|connection (reset|refused|closed)|timed out|broken pipe'; then
+      sleep 15; continue
+    fi
+    break
+  done
+  [ -n "$out" ] && printf '%s\n' "$out"
+  return "$rc"
+}
 sr() { r "echo '$PW' | sudo -S -p '' sh -c \"$*\""; }
 # let first-boot jobs (disk growing, SSH keys, desktop start) settle
 r 'for i in $(seq 1 60); do s=$(systemctl is-system-running 2>/dev/null); case $s in running|degraded) break;; esac; sleep 5; done; echo $s' > "$T/state"
 state="$(tail -n1 "$T/state")"
+# Armbian's first-run job (new SSH host keys, system fixes) restarts sshd: let it finish
+fr="$(r 'for i in $(seq 1 120); do [ "$(systemctl show -p ActiveState --value armbian-firstrun 2>/dev/null)" = activating ] || break; sleep 5; done; systemctl show -p ActiveState --value armbian-firstrun')"
+say "armbian-firstrun: ${fr:-n/a}"
 [ "$state" = running ] && ok "systemd state: running" || bad "systemd state: $state"
 
 say ""; say "---- system ----"
@@ -147,6 +163,79 @@ mon "screendump $T/screen.ppm"; sleep 3
 if [ -s "$T/screen.ppm" ]; then
   python3 -c "from PIL import Image; Image.open('$T/screen.ppm').save('$LOGS/screen-$EDITION.png', optimize=True)" \
     && ok "screenshot saved (screen-$EDITION.png)"
+fi
+
+# Desktop tour: real mouse clicks and key presses through QEMU's virtual USB mouse/keyboard
+# (the same input path as a real mouse on the box), one screenshot per app.
+if [ "$EDITION" = desktop ]; then
+  say ""; say "---- desktop tour (clicks on the virtual screen, 1920x1080) ----"
+  # input <json events...>: send QMP input events. Mouse uses absolute coordinates 0..32767.
+  input() { python3 -I - "$T/qmp.sock" "$@" <<'PY'
+import json, socket, sys, time
+s = socket.socket(socket.AF_UNIX); s.connect(sys.argv[1]); f = s.makefile("rw")
+def cmd(c, a=None):
+    m = {"execute": c}
+    if a is not None: m["arguments"] = a
+    f.write(json.dumps(m) + "\n"); f.flush()
+    while True:
+        r = json.loads(f.readline())
+        if "return" in r or "error" in r: return r
+f.readline(); cmd("qmp_capabilities")
+for ev in sys.argv[2:]:
+    if ev.startswith("sleep:"): time.sleep(float(ev[6:])); continue
+    cmd("input-send-event", {"events": json.loads(ev)})
+    time.sleep(0.12)
+PY
+  }
+  click() {   # click X Y (screen pixels)
+    local x=$(( $1 * 32767 / 1919 )) y=$(( $2 * 32767 / 1079 ))
+    input "[{\"type\":\"abs\",\"data\":{\"axis\":\"x\",\"value\":$x}},{\"type\":\"abs\",\"data\":{\"axis\":\"y\",\"value\":$y}}]" sleep:0.4 \
+          '[{"type":"btn","data":{"down":true,"button":"left"}}]' '[{"type":"btn","data":{"down":false,"button":"left"}}]'
+  }
+  keys() {    # keys qcode... (e.g. x 9 6 o s ret)
+    local ev=() k
+    for k in "$@"; do
+      ev+=("[{\"type\":\"key\",\"data\":{\"down\":true,\"key\":{\"type\":\"qcode\",\"data\":\"$k\"}}}]"
+           "[{\"type\":\"key\",\"data\":{\"down\":false,\"key\":{\"type\":\"qcode\",\"data\":\"$k\"}}}]")
+    done
+    input "${ev[@]}"
+  }
+  shot() {
+    rm -f "$T/s.ppm"; mon "screendump $T/s.ppm"; sleep 3
+    [ -s "$T/s.ppm" ] && python3 -c "from PIL import Image; Image.open('$T/s.ppm').save('$LOGS/screen-desktop-$1.png', optimize=True)" \
+      && say "  screenshot: screen-desktop-$1.png"
+  }
+  # has_win PATTERN: is a window whose title/class matches open on the desktop?
+  has_win() { r "DISPLAY=:0 XAUTHORITY=/home/x96/.Xauthority xwininfo -root -tree 2>/dev/null | grep -qiE '$1' && echo yes" | grep -q yes; }
+  wait_win() {  # wait_win PATTERN SECONDS
+    local i; for i in $(seq 1 $(( $2 / 10 ))); do has_win "$1" && return 0; sleep 10; done; return 1
+  }
+  open_app() {  # open_app NAME X Y WINDOW-PATTERN SECONDS SETTLE
+    local t0=$(date +%s)
+    click "$2" "$3"
+    if wait_win "$4" "$5"; then
+      ok "clicking $1 in the dock opens it ($(( $(date +%s) - t0 ))s, emulated CPU)"; sleep "$6"; return 0
+    fi
+    bad "clicking $1 in the dock did not open a window within $5s"; return 1
+  }
+  close_app() { r "pkill -x '$1'" >/dev/null; sleep 5; }
+
+  # app menu (top-left logo)
+  click 14 13; sleep 10; shot menu; keys esc; sleep 3
+  # dock icons, left to right: Files 680, Firefox 742, YouTube 805, Celluloid 866,
+  # Writer 928, Calc 990, Impress 1052, Terminal 1114, Settings 1176
+  open_app Files 680 1047 '"Thunar"' 90 10 && shot files; close_app thunar
+  if open_app Firefox 742 1047 '"firefox-esr"|Mozilla Firefox' 300 60; then
+    shot firefox
+    say "  RAM with Firefox open: $(r "free -m | awk '/^Mem:/{print \$3}'") MiB used"
+  fi
+  close_app firefox-esr; sleep 5
+  open_app "LibreOffice Writer" 928 1047 'libreoffice-writer|LibreOffice Writer' 240 30 && shot writer; close_app soffice.bin
+  if open_app Terminal 1114 1047 '"Xfce4-terminal"' 90 10; then
+    keys x 9 6 o s ret; sleep 10; shot terminal
+  fi
+  close_app xfce4-terminal
+  open_app Settings 1176 1047 '"Xfce4-settings-manager"' 90 10 && shot settings; close_app xfce4-settings-   # process names are cut to 15 characters
 fi
 
 r "echo '$PW' | sudo -S -p '' poweroff" >/dev/null 2>&1
