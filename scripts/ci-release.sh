@@ -21,7 +21,7 @@ tag="v${X96OS_VERSION}-build${GITHUB_RUN_NUMBER}"
   for img in "${imgs[@]}"; do
     case "$img" in
       *-desktop-*) echo "| \`$img\` | **Desktop**: macOS-style desktop, Firefox, LibreOffice, Celluloid |" ;;
-      *-cli-*)     echo "| \`$img\` | **CLI**: headless / server, SSH, \`x96os\` helper, ~100 MB RAM at idle |" ;;
+      *-cli-*)     echo "| \`$img\` | **CLI**: headless / server, SSH, \`x96os\` helper, ~300 MB RAM at idle |" ;;
       *)           echo "| \`$img\` | |" ;;
     esac
   done

@@ -67,7 +67,9 @@ for i in $(seq 1 30); do "${SSH[@]}" true 2>/dev/null && break; sleep 10; done
 if "${SSH[@]}" true 2>/dev/null; then ok "SSH login with the default account"
 else bad "SSH login failed"; tail -60 "$SERIAL" | tee -a "$REPORT"; exit 1; fi
 
-r() { "${SSH[@]}" "$@" 2>&1; }
+# admin tools (modinfo, sysctl, swapon, modprobe) live in /usr/sbin, which a normal user's PATH lacks
+r() { "${SSH[@]}" "export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin; $*" 2>&1; }
+sr() { r "echo '$PW' | sudo -S -p '' sh -c \"$*\""; }
 # let first-boot jobs (disk growing, SSH keys, desktop start) settle
 r 'for i in $(seq 1 60); do s=$(systemctl is-system-running 2>/dev/null); case $s in running|degraded) break;; esac; sleep 5; done; echo $s' > "$T/state"
 state="$(tail -n1 "$T/state")"
@@ -76,7 +78,10 @@ state="$(tail -n1 "$T/state")"
 say ""; say "---- system ----"
 r 'cat /etc/x96os-release; uname -r' | tee -a "$REPORT"
 failed="$(r 'systemctl --failed --no-legend --plain | awk "{print \$1}"' | xargs)"
-[ -z "$failed" ] && ok "no failed services" || bad "failed services: $failed"
+if [ -z "$failed" ]; then ok "no failed services"; else
+  bad "failed services: $failed"
+  for u in $failed; do say "  -- journal of $u:"; sr "journalctl -b -u $u --no-pager -q | tail -n 15" | sed 's/^/     /' | tee -a "$REPORT"; done
+fi
 r "echo '$PW' | sudo -S -p '' true" >/dev/null && ok "sudo works" || bad "sudo"
 grown="$(r 'df -BG --output=size / | tail -1 | tr -dc 0-9')"
 [ "${grown:-0}" -ge 12 ] && ok "first boot grew the root filesystem to ${grown}G" || bad "root filesystem not grown (${grown}G)"
@@ -90,6 +95,13 @@ say ""; say "---- drivers & firmware (in the image) ----"
 for m in 8189es 8189fs; do
   r "modinfo -F filename $m" | grep -q "\.ko" && ok "Wi-Fi driver $m.ko present for $(r 'uname -r')" || bad "Wi-Fi driver $m missing"
 done
+# load each built-in Wi-Fi driver into the running kernel: proves it matches the kernel
+# (no Wi-Fi chip is needed for the driver to load; it just waits for one)
+for m in 8189es 8189fs; do
+  out="$(sr "modprobe $m && lsmod | grep -q '^$m ' && echo LOADED; modprobe -r $m")"
+  echo "$out" | grep -q LOADED && ok "Wi-Fi driver $m loads into kernel $(r 'uname -r')" || { bad "Wi-Fi driver $m does not load"; echo "$out" | tail -5 | sed 's/^/     /' | tee -a "$REPORT"; }
+done
+sr "dmesg | grep -iE '8189|module verification|disagrees|Unknown symbol' | tail -n 8" | sed 's/^/  dmesg: /' | tee -a "$REPORT"
 for m in brcmfmac rtw88_8723ds rtw88_8821cs rtw88_8822bs ath9k_htc mt7601u rt2800usb rtl8xxxu mt76x2u lima meson_vdec; do
   r "modinfo -F filename $m" | grep -q "\.ko" && say "  ok     module $m" || say "  absent module $m"
 done
