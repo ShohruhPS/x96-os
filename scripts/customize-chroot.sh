@@ -293,6 +293,16 @@ for d in /etc/systemd/system/getty@.service.d /etc/systemd/system/serial-getty@.
   rmdir "$d" 2>/dev/null || true
 done
 
+# x96os-firstboot creates this box's own SSH host keys before SSH starts. Armbian's first-run job
+# would delete and regenerate them a second time and restart SSH, which drops SSH connections
+# for a while after the first boot, so it is told to keep them.
+if [ -f /usr/sbin/armbian-fix ]; then
+  sed -i 's/^export OPENSSHD_REGENERATE_HOST_KEYS=true/export OPENSSHD_REGENERATE_HOST_KEYS=false/' /usr/sbin/armbian-fix
+fi
+for f in /etc/default/armbian-firstrun /etc/armbian-firstrun.conf; do
+  [ -f "$f" ] && sed -i 's/^OPENSSHD_REGENERATE_HOST_KEYS=.*/OPENSSHD_REGENERATE_HOST_KEYS=false/' "$f"
+done
+
 step "Locale and time zone"
 sed -i 's/^# *en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
 locale-gen
@@ -457,6 +467,13 @@ if os.path.exists(p):
     t.write(p, encoding="UTF-8", xml_declaration=True)
     print("shortcuts updated")
 PY
+
+# Bluetooth tray icon (blueman, ~60 MB) only when the box has a Bluetooth adapter: most X96 Minis
+# have none, and without one blueman's background service just times out at login.
+if [ -f /etc/xdg/autostart/blueman.desktop ]; then
+  sed -i 's|^Exec=.*|Exec=sh -c "ls -d /sys/class/bluetooth/hci* >/dev/null 2>\&1 \&\& exec blueman-applet"|' /etc/xdg/autostart/blueman.desktop
+  grep '^Exec=' /etc/xdg/autostart/blueman.desktop
+fi
 
 step "Firefox tuning"
 FFJS=/etc/firefox-esr/firefox-esr.js
