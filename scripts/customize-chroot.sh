@@ -78,7 +78,7 @@ CORE=(
   # system
   xdg-user-dirs xdg-utils desktop-file-utils shared-mime-info
   earlyoom cloud-guest-utils locales tzdata sudo htop curl ca-certificates make bc
-  python3 libnotify-bin
+  python3 libnotify-bin libglib2.0-bin
 )
 mapfile -t CORE_OK < <(want "${CORE[@]}")
 "${APT[@]}" install --no-install-recommends "${CORE_OK[@]}"
@@ -104,10 +104,18 @@ for agent in xfce-polkit lxpolkit mate-polkit; do
 done
 
 step "Firmware for USB Wi-Fi / Bluetooth dongles"
-# ophub ships its own board firmware in /lib/firmware; let Debian packages overwrite
-# unowned duplicates instead of failing.
-mapfile -t FW < <(want firmware-realtek firmware-atheros firmware-mediatek firmware-misc-nonfree firmware-libertas)
-[ "${#FW[@]}" -gt 0 ] && "${APT[@]}" -o Dpkg::Options::=--force-overwrite install --no-install-recommends "${FW[@]}"
+# Armbian's firmware package also carries board firmware (Broadcom/AP6xxx Wi-Fi, Amlogic bits):
+# never let Debian's firmware packages replace it. Upgrade to the full Armbian set instead,
+# which covers common USB Wi-Fi / Bluetooth dongles.
+if dpkg -s armbian-firmware >/dev/null 2>&1 || dpkg -s armbian-firmware-full >/dev/null 2>&1; then
+  if have armbian-firmware-full && ! dpkg -s armbian-firmware-full >/dev/null 2>&1; then
+    "${APT[@]}" install --no-install-recommends armbian-firmware-full || echo "WARNING: armbian-firmware-full not installed"
+  fi
+  echo "firmware: $(dpkg-query -W -f='${Package} ${Version}\n' 'armbian-firmware*' 2>/dev/null | xargs)"
+else
+  mapfile -t FW < <(want firmware-realtek firmware-atheros firmware-mediatek firmware-misc-nonfree firmware-libertas firmware-brcm80211)
+  [ "${#FW[@]}" -gt 0 ] && "${APT[@]}" -o Dpkg::Options::=--force-overwrite install --no-install-recommends "${FW[@]}"
+fi
 
 step "zram compressed swap"
 if [ -f /lib/systemd/system/armbian-zram-config.service ] || [ -f /usr/lib/systemd/system/armbian-zram-config.service ]; then
