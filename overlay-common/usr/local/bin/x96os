@@ -9,6 +9,41 @@ case "$cmd" in
   info|"")   exec /usr/local/bin/x96os-info ;;
   wifi)      exec nmtui-connect "$@" ;;
   net)       exec nmtui ;;
+  wifi-chip) found=""; ssv=""
+             for u in /sys/bus/sdio/devices/*/uevent; do
+               [ -f "$u" ] || continue
+               id="$(sed -n 's/^SDIO_ID=//p' "$u" | tr 'A-F' 'a-f')"; drv="$(sed -n 's/^DRIVER=//p' "$u")"
+               case "$id" in
+                 024c:8179) name="Realtek RTL8189ETV (driver 8189es, included)" ;;
+                 024c:f179) name="Realtek RTL8189FTV (driver 8189fs, included)" ;;
+                 3030:3030) name="iComm SSV6051P / SSV6030P / SV6256P (drivers ssv6051 / ssv6x5x, included)"; ssv=1 ;;
+                 024c:b723) name="Realtek RTL8723BS (driver r8723bs)" ;;
+                 024c:d723) name="Realtek RTL8723DS (driver rtw88_8723ds)" ;;
+                 024c:c821) name="Realtek RTL8821CS (driver rtw88_8821cs)" ;;
+                 024c:b822) name="Realtek RTL8822BS (driver rtw88_8822bs)" ;;
+                 024c:c822) name="Realtek RTL8822CS (driver rtw88_8822cs)" ;;
+                 02d0:*)    name="Broadcom / AMPAK (driver brcmfmac)" ;;
+                 *)         name="unknown chip, please report it: x96os report" ;;
+               esac
+               echo "SDIO $id  $name  -> driver in use: ${drv:-none}"; found=1
+             done
+             [ -n "$found" ] || echo "No built-in (SDIO) Wi-Fi chip found."
+             echo "Wi-Fi interfaces: $(ls /sys/class/net 2>/dev/null | grep -E '^wl' | xargs || true)"
+             lsusb 2>/dev/null | grep -iE 'wireless|wlan|802\.11|wi-?fi' | sed 's/^/USB  /' || true
+             [ -n "$ssv" ] && echo "iComm chip: active driver choice: $(sed -n 's/^blacklist \([^ ]*\).*/\1 is off/p' /etc/modprobe.d/x96os-ssv.conf 2>/dev/null). Switch: sudo x96os wifi-driver ssv6051|sv6256p"
+             true ;;
+  wifi-driver)
+             need_root "$@"
+             case "${1:-}" in
+               ssv6051) echo "blacklist ssv6x5x   # SV6256P driver off, switch with: sudo x96os wifi-driver sv6256p" > /etc/modprobe.d/x96os-ssv.conf ;;
+               sv6256p) echo "blacklist ssv6051   # SSV6051P/SSV6030P driver off, switch with: sudo x96os wifi-driver ssv6051" > /etc/modprobe.d/x96os-ssv.conf ;;
+               *) echo "usage: sudo x96os wifi-driver ssv6051|sv6256p"
+                  echo "Only for iComm Wi-Fi chips (SDIO id 3030:3030, see: x96os wifi-chip)."
+                  echo "  ssv6051  SSV6051P / SSV6030P (default)"
+                  echo "  sv6256p  SV6256P (chip id SSV6006)"
+                  exit 1 ;;
+             esac
+             echo "Saved. Reboot to use the $1 driver: sudo reboot" ;;
   install)   need_root "$@"; echo "Installs X96 OS to the internal eMMC. THIS ERASES ANDROID."
              echo "When asked for the box, choose: 113  X96-Mini"; echo
              exec armbian-install "$@" ;;
@@ -35,6 +70,8 @@ case "$cmd" in
     cat <<'EOF'
 x96os            system overview
 x96os wifi       connect to a Wi-Fi network
+x96os wifi-chip  which Wi-Fi chip this box has and which driver it uses
+x96os wifi-driver ssv6051|sv6256p   pick the driver for iComm Wi-Fi chips (then reboot)
 x96os net        all network settings (Wi-Fi, Ethernet, hostname)
 x96os install    install X96 OS to the internal storage (erases Android)
 x96os backup     back up / restore the internal storage (armbian-ddbr)
