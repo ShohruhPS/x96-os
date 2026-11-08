@@ -21,7 +21,10 @@ d="$(mktemp -d)"
       echo "### boot test (QEMU virtual X96 Mini)"; echo '```'; cat "$dir/smoketest-$ed.txt"; echo '```'
       cp "$dir/smoketest-$ed.txt" "$d/"
     fi
-    [ -f "$dir/screen-$ed.png" ] && { cp "$dir/screen-$ed.png" "$d/"; echo "Screenshot: [screen-$ed.png](screen-$ed.png)"; }
+    for png in "$dir"/screen-"$ed"*.png; do
+      [ -f "$png" ] || continue
+      cp "$png" "$d/"; echo "Screenshot: [$(basename "$png")]($(basename "$png"))"
+    done
     [ -f "$dir/serial-$ed.log" ] && cp "$dir/serial-$ed.log" "$d/"
     log="$(ls "$dir"/build-image-*.log 2>/dev/null | head -n1)"
     if [ -n "$log" ]; then
