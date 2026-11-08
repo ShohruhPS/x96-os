@@ -31,6 +31,15 @@ trap cleanup EXIT
 trap 'echo "::error::build-image.sh failed at line $LINENO: $BASH_COMMAND"' ERR
 
 [ "$(id -u)" = 0 ] || fail "run as root"
+# ophub writes its packaged image into the same folder as the generic Armbian base image:
+# make sure we use the X96 Mini one, never the base.
+BOARD_ID="${X96OS_BOARD:-s905w-x96-mini}"
+if [[ "$(basename "$IN")" != *"_${BOARD_ID}_"* ]]; then
+  ALT="$(ls -1t "$(dirname "$IN")"/*"_${BOARD_ID}_"*.img* 2>/dev/null | grep -E '\.img(\.gz|\.xz)?$' | head -n1 || true)"
+  [ -n "$ALT" ] || fail "no ${BOARD_ID} image found next to $(basename "$IN") (ophub output missing?)"
+  echo "Input $(basename "$IN") is not the ${BOARD_ID} image, using $(basename "$ALT")"
+  IN="$(readlink -f "$ALT")"
+fi
 [ "$(uname -m)" = aarch64 ] || fail "needs an arm64 host (got $(uname -m))"
 rm -rf "$WORK"; mkdir -p "$WORK" "$MNT" "$OUTDIR"
 
