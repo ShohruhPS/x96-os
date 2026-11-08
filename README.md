@@ -8,7 +8,7 @@ Flash it to an SD card or USB stick and boot. No renaming files, no editing `uEn
 | | |
 |---|---|
 | Base | Debian 13 "trixie" (Armbian userspace, [ophub](https://github.com/ophub/amlogic-s9xxx-armbian) kernel 6.12 LTS) |
-| Boot | Pre-configured for the X96 Mini: `meson-gxl-s905w-x96-mini.dtb` + `u-boot.ext` already in place |
+| Boot | Pre-configured for the X96 Mini: `meson-gxl-s905w-x96-mini.dtb` and boot scripts already in place |
 | Desktop | Xfce with a macOS layout: top menu bar, Plank dock, WhiteSur theme, icons and cursors, traffic-light window buttons |
 | Apps | Firefox ESR (+ uBlock Origin), LibreOffice Writer/Calc/Impress, Celluloid media player, Thunar file manager, terminal, text editor, image viewer |
 | Video | mpv/Celluloid use the S905W's hardware decoder (H.264, MPEG-2, HEVC, VP9). Paste a YouTube link into Celluloid for smooth hardware-decoded playback (via yt-dlp) |

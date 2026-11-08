@@ -64,7 +64,15 @@ mount "$BOOTP" "$MNT/boot"
 log "Boot partition (should already be set up for the X96 Mini)"
 ls -la "$MNT/boot"
 grep -E '^(FDT|APPEND)' "$MNT/boot/uEnv.txt" || true
-[ -f "$MNT/boot/u-boot.ext" ] || fail "u-boot.ext missing from boot partition"
+# Older ophub kernels need u-boot.ext to chain-load; kernels with the TEXT_OFFSET patch (header
+# word 0108) boot straight from the stock Android bootloader, so ophub leaves u-boot.ext out.
+if [ -f "$MNT/boot/u-boot.ext" ]; then
+  echo "u-boot.ext present"
+else
+  OFF="$(hexdump -n 15 -x "$MNT/boot/zImage" 2>/dev/null | head -n1 | awk '{print $7}' || true)"
+  [ "$OFF" = "0108" ] || fail "u-boot.ext missing and the kernel (header $OFF) needs it"
+  echo "kernel has the TEXT_OFFSET patch: boots directly, no u-boot.ext needed"
+fi
 grep -q 'meson-gxl-s905w-x96-mini.dtb' "$MNT/boot/uEnv.txt" || fail "uEnv.txt does not point to the X96 Mini dtb"
 cat "$MNT/etc/ophub-release" 2>/dev/null || true
 
