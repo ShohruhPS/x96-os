@@ -10,7 +10,7 @@ Flash it to an SD card or USB stick and boot. No renaming files, no editing `uEn
 | For | Using the box as a small computer on your TV | Headless server: Pi-hole, Home Assistant, file server, SSH box |
 | Interface | macOS-style Xfce desktop, auto-login | Console + SSH, colourful X96 OS greeting with live system info |
 | Apps | Firefox, LibreOffice, Celluloid, files, terminal | `htop`, `btop`, `tmux`, `git`, `nmtui`, `x96os` helper |
-| RAM at idle | ~450 MB | ~100 MB |
+| RAM at idle (measured) | ~650 MB | ~320 MB |
 | File | `X96OS-*-desktop-*.img.xz` | `X96OS-*-cli-*.img.xz` |
 
 Both share the same tuned base: X96 Mini boot setup, Wi-Fi drivers, zram, CPU/IO/IRQ tuning.
