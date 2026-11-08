@@ -87,6 +87,13 @@ grown="$(r 'df -BG --output=size / | tail -1 | tr -dc 0-9')"
 [ "${grown:-0}" -ge 12 ] && ok "first boot grew the root filesystem to ${grown}G" || bad "root filesystem not grown (${grown}G)"
 r 'test -f /var/lib/x96os/firstboot-done' >/dev/null && ok "first-boot setup finished" || bad "first-boot marker missing"
 [ "$(r 'cat /etc/x96os/edition')" = "$EDITION" ] && ok "edition marker: $EDITION" || bad "edition marker wrong"
+r 'grep -rls -- --autologin /etc/systemd/system/*getty* /usr/lib/systemd/system/*getty*.d 2>/dev/null' | grep -q . \
+  && bad "a text console logs in as root without a password" || ok "no password-less console login"
+if [ "$EDITION" = cli ]; then   # checked after first boot: ophub's first-boot script rewrites motd permissions
+  mo="$(sr 'run-parts --lsbsysinit /etc/update-motd.d')"
+  if echo "$mo" | grep -q 'X96 OS' && ! echo "$mo" | grep -q 'Armbian Linux'; then ok "login greeting is the X96 OS one"
+  else bad "login greeting is not the X96 OS one"; r 'ls -l /etc/update-motd.d' | sed 's/^/     /' | tee -a "$REPORT"; fi
+fi
 r 'ip -4 -br addr show eth0' | grep -q UP && ok "network (eth0) up via NetworkManager" || bad "eth0 not up"
 r 'nmcli -t -f STATE general' | grep -q connected && ok "NetworkManager connected" || bad "NetworkManager not connected"
 r 'getent hosts deb.debian.org' >/dev/null && ok "DNS works" || bad "DNS"
