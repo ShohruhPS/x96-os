@@ -41,6 +41,7 @@ x96os            system overview          x96os update    update all software
 x96os wifi       connect to Wi-Fi         x96os kernel    update the kernel
 x96os install    install to internal eMMC x96os temp      live temperature + clocks
 x96os backup     back up internal storage x96os tune      show performance settings
+x96os report     bug report with hardware info + logs
 ```
 
 ## Install
@@ -62,6 +63,12 @@ x96os install
 ```
 Choose **113 : X96-Mini**, wait, shut down, remove the card, power on.
 
+## Testing without the box
+Every build is boot-tested automatically in QEMU as a "virtual X96 Mini" (same CPU type, RAM and kernel) before it is
+published; results and a screenshot are on the [`build-status` branch](../../tree/build-status).
+You can run any image the same way on your own PC: see **[docs/TESTING.md](docs/TESTING.md)**.
+Found a bug? Run `x96os report` and attach the file to an [issue](../../issues).
+
 ## Tips
 - **Super** key: app menu · **Super+Space**: search · **Super+E**: files · **Super+T**: terminal
 - **YouTube**: the dock's YouTube icon opens it in Firefox. For the smoothest playback, copy a video link and open it in **Celluloid** (＋ → Open Location).
@@ -74,9 +81,10 @@ Choose **113 : X96-Mini**, wait, shut down, remove the card, power on.
 ## Building
 Every push to `main` builds both editions on GitHub Actions (native arm64 runners, in parallel) and publishes them together under Releases.
 - `.github/workflows/build.yml`: thin workflow that runs the steps below for each edition, then publishes one release.
-- `scripts/ci-*.sh`: the CI steps (prepare runner, find the Armbian base, build, release, status report).
+- `scripts/ci-*.sh`: the CI steps (prepare runner, find the Armbian base, build, boot test, release, status report).
 - `scripts/build-image.sh`: unpack → themes and artwork → chroot customisation → shrink → compress.
 - `scripts/customize-chroot.sh`: packages, drivers, users, desktop layout, services (per edition).
+- `scripts/run-qemu.sh` / `run-qemu.bat`: run an image on a PC (see docs/TESTING.md).
 - `overlay/` (desktop + shared system tuning), `overlay-common/` (both editions), `overlay-cli/`: config files copied into the image.
 - `assets/make-wallpapers.py`: generates the logo and wallpapers.
 
