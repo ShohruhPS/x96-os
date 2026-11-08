@@ -103,19 +103,19 @@ for agent in xfce-polkit lxpolkit mate-polkit; do
   if have "$agent"; then "${APT[@]}" install --no-install-recommends "$agent"; break; fi
 done
 
-step "Firmware for USB Wi-Fi / Bluetooth dongles"
-# Armbian's firmware package also carries board firmware (Broadcom/AP6xxx Wi-Fi, Amlogic bits):
-# never let Debian's firmware packages replace it. Upgrade to the full Armbian set instead,
-# which covers common USB Wi-Fi / Bluetooth dongles.
-if dpkg -s armbian-firmware >/dev/null 2>&1 || dpkg -s armbian-firmware-full >/dev/null 2>&1; then
-  if have armbian-firmware-full && ! dpkg -s armbian-firmware-full >/dev/null 2>&1; then
-    "${APT[@]}" install --no-install-recommends armbian-firmware-full || echo "WARNING: armbian-firmware-full not installed"
-  fi
-  echo "firmware: $(dpkg-query -W -f='${Package} ${Version}\n' 'armbian-firmware*' 2>/dev/null | xargs)"
+step "Firmware for Wi-Fi / Bluetooth"
+# Armbian's firmware package carries the board firmware (Broadcom/AP6xxx Wi-Fi, Amlogic video
+# decoder) plus the common USB dongles (Realtek, MediaTek, Ralink, Atheros). Keep it untouched:
+# Debian's firmware-* packages would replace it, and armbian-firmware-full is ~1.8 GB.
+if dpkg -s armbian-firmware >/dev/null 2>&1; then
+  echo "keeping $(dpkg-query -W -f='${Package} ${Version}' armbian-firmware)"
 else
-  mapfile -t FW < <(want firmware-realtek firmware-atheros firmware-mediatek firmware-misc-nonfree firmware-libertas firmware-brcm80211)
-  [ "${#FW[@]}" -gt 0 ] && "${APT[@]}" -o Dpkg::Options::=--force-overwrite install --no-install-recommends "${FW[@]}"
+  mapfile -t FW < <(want firmware-realtek firmware-atheros firmware-mediatek firmware-misc-nonfree firmware-brcm80211)
+  [ "${#FW[@]}" -gt 0 ] && "${APT[@]}" install --no-install-recommends "${FW[@]}"
 fi
+for f in meson/vdec/gxl_h264.bin brcm rtlwifi mediatek; do
+  [ -e "/lib/firmware/$f" ] && echo "  firmware ok: $f" || echo "  WARNING: firmware missing: $f"
+done
 
 step "zram compressed swap"
 if [ -f /lib/systemd/system/armbian-zram-config.service ] || [ -f /usr/lib/systemd/system/armbian-zram-config.service ]; then

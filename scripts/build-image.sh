@@ -26,6 +26,7 @@ cleanup() {
   done
   mountpoint -q "$MNT" && umount -lf "$MNT"
   [ -n "$LOOP" ] && losetup -d "$LOOP" 2>/dev/null
+  return 0
 }
 trap cleanup EXIT
 trap 'echo "::error::build-image.sh failed at line $LINENO: $BASH_COMMAND"' ERR
@@ -175,5 +176,7 @@ NAME="X96OS-${VERSION}-x96mini-s905w-$(date -u +%Y%m%d).img"
 mv "$IMG" "$OUTDIR/$NAME"
 xz -T0 -6 -v "$OUTDIR/$NAME"
 ( cd "$OUTDIR" && sha256sum "$NAME.xz" > "$NAME.xz.sha256" )
+# hand the results back to the user who ran sudo (the release step runs unprivileged)
+[ -n "${SUDO_UID:-}" ] && chown -R "$SUDO_UID:${SUDO_GID:-$SUDO_UID}" "$OUTDIR"
 ls -lh "$OUTDIR"
 log "Done: $OUTDIR/$NAME.xz"
