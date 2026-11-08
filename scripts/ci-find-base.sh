@@ -3,7 +3,7 @@
 set -euo pipefail
 : "${DEBIAN_RELEASE:=trixie}"
 mkdir -p build/output/images logs
-curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" \
+curl -fsSL --retry 6 --retry-all-errors --retry-delay 15 -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" \
   "https://api.github.com/repos/ophub/amlogic-s9xxx-armbian/releases?per_page=60" -o releases.json
 jq -r --arg T "Armbian_${DEBIAN_RELEASE}_arm64_" \
   '.[] | select(.tag_name|contains($T)) | .tag_name as $t | .assets[] | select(.name|endswith(".img.gz")) | select(.name|contains("-trunk_")) | "\($t)  \(.name)  \(.updated_at)"' \
@@ -20,5 +20,5 @@ sel="$(pick minimal)"; [ -n "$sel" ] || sel="$(pick server)"; [ -n "$sel" ] || s
 [ -n "$sel" ] || { echo "::error::No Armbian ${DEBIAN_RELEASE} trunk base image found in ophub releases"; exit 1; }
 url="${sel%% *}"; name="${sel#* }"
 echo "Using base image: ${name}" | tee logs/base-image.txt
-curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/octet-stream" "$url" -o "build/output/images/${name}"
+curl -fsSL --retry 6 --retry-all-errors --retry-delay 15 -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/octet-stream" "$url" -o "build/output/images/${name}"
 ls -lh build/output/images

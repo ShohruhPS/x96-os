@@ -17,6 +17,12 @@ d="$(mktemp -d)"
     echo "## ${ed}"
     [ -f "$dir/outcome.txt" ] && { echo '```'; cat "$dir/outcome.txt"; echo '```'; }
     [ -f "$dir/base-image.txt" ] && { echo '```'; cat "$dir/base-image.txt"; echo '```'; }
+    if [ -f "$dir/smoketest-$ed.txt" ]; then
+      echo "### boot test (QEMU virtual X96 Mini)"; echo '```'; cat "$dir/smoketest-$ed.txt"; echo '```'
+      cp "$dir/smoketest-$ed.txt" "$d/"
+    fi
+    [ -f "$dir/screen-$ed.png" ] && { cp "$dir/screen-$ed.png" "$d/"; echo "Screenshot: [screen-$ed.png](screen-$ed.png)"; }
+    [ -f "$dir/serial-$ed.log" ] && cp "$dir/serial-$ed.log" "$d/"
     log="$(ls "$dir"/build-image-*.log 2>/dev/null | head -n1)"
     if [ -n "$log" ]; then
       echo "### errors"; echo '```'
