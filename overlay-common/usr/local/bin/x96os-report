@@ -1,0 +1,45 @@
+#!/bin/bash
+# X96 OS bug report: hardware details + logs in one text file you can attach to a GitHub issue.
+# Runs with sudo for the kernel log; passwords and Wi-Fi keys are never included.
+[ "$(id -u)" = 0 ] || exec sudo "$0" "$@"
+OUT="${1:-/home/${SUDO_USER:-root}/x96os-report-$(date +%Y%m%d-%H%M).txt}"
+
+sec() { printf '\n===== %s =====\n' "$1"; }
+run() { printf '$ %s\n' "$*"; "$@" 2>&1 | head -n "${LINES_MAX:-200}"; }
+
+{
+  echo "X96 OS bug report, $(date -u '+%Y-%m-%d %H:%M UTC')"
+  sec "X96 OS";        cat /etc/x96os-release; cat /etc/x96os-build-info.txt 2>/dev/null
+  sec "Board";         run cat /proc/device-tree/model; echo; run cat /proc/device-tree/compatible | tr '\0' ' '; echo
+                       grep -E '^(FDT|LINUX|INITRD)=' /boot/uEnv.txt 2>/dev/null
+                       if systemd-detect-virt -q 2>/dev/null; then echo "running in a virtual machine: $(systemd-detect-virt)"; fi
+  sec "Kernel";        run uname -a; cat /proc/cmdline
+  sec "CPU";           run lscpu
+                       for p in /sys/devices/system/cpu/cpufreq/policy*; do
+                         [ -d "$p" ] && echo "${p##*/}: $(cat $p/scaling_governor) $(cat $p/scaling_min_freq)-$(cat $p/scaling_max_freq) kHz, now $(cat $p/scaling_cur_freq)"
+                       done
+                       echo "temperature: $(( $(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null || echo 0) / 1000 ))C"
+  sec "Memory";        run free -m; run swapon --show; run zramctl
+  sec "Storage";       run lsblk -o NAME,SIZE,TYPE,FSTYPE,LABEL,MOUNTPOINTS; run df -h
+                       for q in /sys/block/*/queue/scheduler; do echo "$q: $(cat $q)"; done
+  sec "Wi-Fi chip (SDIO)"
+                       for d in /sys/bus/sdio/devices/*; do [ -d "$d" ] && echo "${d##*/}: $(grep -h SDIO_ID $d/uevent) driver=$(basename "$(readlink $d/driver 2>/dev/null)")"; done
+                       ls /sys/bus/sdio/devices 2>/dev/null | grep -q . || echo "no SDIO devices"
+  sec "USB";           run lsusb; run lsusb -t
+  sec "Network";       run ip -br addr; run ip route; run nmcli -t -f DEVICE,TYPE,STATE,CONNECTION device; run iw dev
+                       run rfkill list
+  sec "Modules";       run lsmod
+  sec "Display";       for c in /sys/class/drm/card*-*; do [ -f "$c/status" ] && echo "${c##*/}: $(cat $c/status) $(head -n1 $c/modes 2>/dev/null)"; done
+                       DISPLAY=:0 XAUTHORITY=/home/${SUDO_USER:-x96}/.Xauthority timeout 5 glxinfo -B 2>/dev/null | head -20
+  sec "Audio";         run aplay -l; for c in 0 1; do run amixer -c $c scontrols; done
+  sec "Video decoder"; ls /dev/video* 2>/dev/null; for v in /sys/class/video4linux/*; do [ -f "$v/name" ] && echo "${v##*/}: $(cat $v/name)"; done
+  sec "Failed services"; run systemctl --failed --no-pager
+  sec "Boot time";     run systemd-analyze; LINES_MAX=15 run systemd-analyze blame --no-pager
+  sec "Errors this boot"; LINES_MAX=150 run journalctl -b -p warning --no-pager -q
+  sec "Kernel log (errors/warnings)"; dmesg --level=err,warn 2>/dev/null | tail -n 150
+  sec "Kernel log (Wi-Fi, sound, video, gpu)"; dmesg 2>/dev/null | grep -iE 'sdio|wlan|8189|brcm|ssv|rtl|snd|sound|hdmi|vdec|meson|lima|drm|mali' | tail -n 150
+  sec "First boot";    cat /var/log/x96os-firstboot.log 2>/dev/null
+} > "$OUT" 2>&1
+chown "${SUDO_USER:-root}:" "$OUT" 2>/dev/null
+echo "Report saved to: $OUT"
+echo "Attach it to an issue at https://github.com/ShohruhPS/x96-os/issues"
