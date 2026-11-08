@@ -258,18 +258,40 @@ if [ "$EDITION" = cli ]; then
     printf '  \033[2mhost\033[0m \\n   \033[2mIP\033[0m \\4   \033[2mconsole\033[0m \\l\n'
     printf '  \033[2mlog in as\033[0m x96 \033[2m/ password\033[0m x96os\n\n'
   } > /etc/issue
-  # Armbian's own login messages are replaced by the X96 OS greeting
+  # Armbian's own login messages are replaced by the X96 OS greeting. ophub's first-boot
+  # script (armbian-fix) re-enables every update-motd.d/{10,20,30}-* and disables the rest,
+  # so: the greeting is named 10-x96os, Armbian's scripts are deleted, and switched off in
+  # /etc/default/armbian-motd in case a package update brings them back.
+  [ -f /etc/update-motd.d/00-x96os ] && mv /etc/update-motd.d/00-x96os /etc/update-motd.d/10-x96os
   for f in /etc/update-motd.d/*; do
-    case "$f" in *x96os*) ;; *) chmod -x "$f" ;; esac
+    case "$f" in *x96os*) chmod 755 "$f" ;; *) rm -f "$f" ;; esac
   done
   : > /etc/motd
 else
   echo "X96 OS ${VERSION} \\n \\l" > /etc/issue
-  for f in /etc/update-motd.d/10-armbian-header /etc/update-motd.d/35-armbian-tips /etc/update-motd.d/41-armbian-config; do
-    [ -f "$f" ] && chmod -x "$f"
-  done
+  rm -f /etc/update-motd.d/10-armbian-header /etc/update-motd.d/35-armbian-tips /etc/update-motd.d/41-armbian-config
+fi
+if [ -f /etc/default/armbian-motd ]; then
+  if grep -q '^MOTD_DISABLE=' /etc/default/armbian-motd; then
+    sed -i 's|^MOTD_DISABLE=.*|MOTD_DISABLE="header tips config sysinfo updates"|' /etc/default/armbian-motd
+  else
+    echo 'MOTD_DISABLE="header tips config sysinfo updates"' >> /etc/default/armbian-motd
+  fi
 fi
 echo "X96 OS ${VERSION}" > /etc/issue.net
+
+# Armbian images log root in on every console WITHOUT a password until its first-login
+# wizard runs; X96 OS skips that wizard (the accounts are set below), so drop the auto-login.
+# The desktop logs in through LightDM instead.
+for d in /etc/systemd/system/getty@.service.d /etc/systemd/system/serial-getty@.service.d \
+         /usr/lib/systemd/system/getty@.service.d /usr/lib/systemd/system/serial-getty@.service.d \
+         /lib/systemd/system/getty@.service.d /lib/systemd/system/serial-getty@.service.d; do
+  [ -d "$d" ] || continue
+  for f in "$d"/*.conf; do
+    [ -f "$f" ] && grep -q -- '--autologin' "$f" && { echo "  removing console auto-login: $f"; rm -f "$f"; }
+  done
+  rmdir "$d" 2>/dev/null || true
+done
 
 step "Locale and time zone"
 sed -i 's/^# *en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
